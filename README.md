@@ -42,5 +42,5 @@ CUDA_VISIBLE_DEVICES=2 python train.py --max_epochs=100 --file="gislr-mw-24"
 
 ## Testing Donut
 
-python train.py --config config/train_BARTLEY.yaml \
+CUDA_VISIBLE_DEVICES=0,1,2 python train.py --config config/train_BARTLEY.yaml \
     --exp_version "test_experiment"
