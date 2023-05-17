@@ -23,24 +23,8 @@ Sweeps Lesson Files: https://github.com/wandb/edu/tree/main/mlops-001/lesson2
 
 Run a sweep on a specific GPU
 ```
-CUDA_VISIBLE_DEVICES=0 wandb agent sweep_ID
-CUDA_VISIBLE_DEVICES=1 wandb agent sweep_ID
-
-CUDA_VISIBLE_DEVICES=0 wandb agent brendanartley/GISLR-keras/tk6ltw1z
-CUDA_VISIBLE_DEVICES=1 wandb agent brendanartley/GISLR-keras/tk6ltw1z
-CUDA_VISIBLE_DEVICES=2 wandb agent brendanartley/GISLR-keras/tk6ltw1z
+CUDA_VISIBLE_DEVICES=0 python main.py --seed=0 --batch_size=3 --accumulate_grad_batches=5 --fast_dev_run
+CUDA_VISIBLE_DEVICES=1 python main.py --batch_size=3
+CUDA_VISIBLE_DEVICES=2 python old_validate.py
+CUDA_VISIBLE_DEVICES=0 python old_validate.py
 ```
-
-## Training Notes
-
-Test Run
-```
-CUDA_VISIBLE_DEVICES=0 python train.py --max_epochs=100 --file="gislr-mw-24"
-CUDA_VISIBLE_DEVICES=1 python train.py --max_epochs=100 --file="gislr-mw-24"
-CUDA_VISIBLE_DEVICES=2 python train.py --max_epochs=100 --file="gislr-mw-24"
-```
-
-## Testing Donut
-
-CUDA_VISIBLE_DEVICES=0,1,2 python train.py --config config/train_BARTLEY.yaml \
-    --exp_version "test_experiment"
