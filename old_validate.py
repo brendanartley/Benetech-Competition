@@ -60,7 +60,6 @@ if __name__ == "__main__":
 
     # Load Models
     processor = AutoProcessor.from_pretrained("google/deplot", is_vqa=False)
-    # model = Pix2StructForConditionalGeneration.from_pretrained("/data/bartley/gpu_test/models/azure-firefly-17.pt")
     model = Pix2StructForConditionalGeneration.from_pretrained("/data/bartley/gpu_test/models/fallen-butterfly-20.pt")
     model.config.text_config.is_decoder=True # Source: https://www.kaggle.com/competitions/benetech-making-graphs-accessible/discussion/406250
     
@@ -76,8 +75,7 @@ if __name__ == "__main__":
     model.to(device)
     model.eval()
 
-    with open("./preds1.txt", "w") as f:
-    # with open("./preds2.txt", "w") as f:
+    with open("./preds1b.txt", "w") as f:
         for idx, batch in tqdm(enumerate(valid_dataloader), total = total_batches):
             labels = batch.pop("labels").to(device)
             flattened_patches = batch.pop("flattened_patches").to(device)
@@ -89,6 +87,7 @@ if __name__ == "__main__":
                 max_new_tokens=config.MAX_LENGTH,
                 eos_token_id=processor.tokenizer.eos_token_id,
                 pad_token_id=processor.tokenizer.pad_token_id,
+                no_repeat_ngram_size=10, #TODO: TEST HOW THIS AFFECTS
                 )
             
             for pred in processor.batch_decode(predictions, skip_special_tokens=True):

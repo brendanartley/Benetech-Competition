@@ -64,7 +64,7 @@ if __name__ == "__main__":
     predictions = pd.DataFrame.from_dict({
         '0a0a0_x': (['abc', 'difd', 'ghi'], 'vertical_bar'),
         '0a0a0_y': ([0.2, 0.9, 2.1], 'vertical_bar'),
-        '1b1b1_x': ([101.24, 90.3, 50.51], 'dot'),  # wrong chart_type
+        '1b1b1_x': ([101.24, 90.3, 50.51, 10], 'dot'),  # wrong chart_type
         '1b1b1_y': ([43.81, 10.12, 11.0, 5.4], 'scatter'),  # wrong number of values in data_series
     }, orient='index', columns=['data_series', 'chart_type'])
 

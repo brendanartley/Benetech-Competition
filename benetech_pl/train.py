@@ -55,4 +55,6 @@ def train(
 
     trainer.fit(module, datamodule=data_module)
 
+    # TODO: Set up code to run generation and score with benetech_score() method
+    # trainer.test(module, datamodule=data_module)
     return

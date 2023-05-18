@@ -10,11 +10,18 @@ GPU info: `watch nvidia-smi`
 
 Watch log file: `tail -n 25 -f logfile`
 
-## Saved Weights
+## TODO
 
-Downloading weights file
-`cp PATH_TO_WEIGHTS ./`
+Set up evaluation script using trainer.test()
+- Log preds to txt
+- Score w/ benetech
 
+Set up a cache directory in /data
+- https://huggingface.co/docs/datasets/cache#cache-directory
+
+## Ideas
+
+One model per chart type. Inference w/ fp16? (will it fit in memory?)
 
 ## Sweeps Notes
 
@@ -23,8 +30,12 @@ Sweeps Lesson Files: https://github.com/wandb/edu/tree/main/mlops-001/lesson2
 
 Run a sweep on a specific GPU
 ```
-CUDA_VISIBLE_DEVICES=0 python main.py --seed=0 --batch_size=3 --accumulate_grad_batches=5 --fast_dev_run
-CUDA_VISIBLE_DEVICES=1 python main.py --batch_size=3
+# Training scripts
+CUDA_VISIBLE_DEVICES=0 python main.py
+CUDA_VISIBLE_DEVICES=1 python main.py --seed=1
+
+# Current evaluation scripts
 CUDA_VISIBLE_DEVICES=2 python old_validate.py
 CUDA_VISIBLE_DEVICES=0 python old_validate.py
+CUDA_VISIBLE_DEVICES=1 python test.py
 ```

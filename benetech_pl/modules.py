@@ -70,6 +70,9 @@ class BenetechDataModule(pl.LightningDataModule):
     
     def val_dataloader(self):
         return self._dataloader(self.val_dataset, train=False)
+    
+    def test_dataloader(self):
+        return self._dataloader(self.val_dataset, train=False)
 
     def _dataloader(self, dataset, train=False):
         return torch.utils.data.DataLoader(
@@ -151,27 +154,6 @@ class BenetechModule(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         self._shared_step(batch, "valid")
-        
-        # # NOTE: This part is very very slow.. Not sure why generate is sooooo sloooooowww.
-        # if batch_idx == 0:
-        #     predictions = self.model.generate(
-        #         flattened_patches=flattened_patches, 
-        #         attention_mask=attention_mask, 
-        #         max_new_tokens=self.hparams.max_length,
-        #         eos_token_id=self.processor.tokenizer.eos_token_id,
-        #         pad_token_id=self.processor.tokenizer.pad_token_id,
-        #         )   
-
-        #     for pidx, (p, l) in enumerate(zip(
-        #         self.processor.batch_decode(predictions, skip_special_tokens=True),
-        #         self.processor.batch_decode(labels, skip_special_tokens=True),
-        #     )):   
-        #         print("-"*10, pidx, "-"*10)
-        #         print("Predictions:", p)
-        #         print()
-        #         print("Labels:", l)
-        #         print()
-        # return preds
     
     def training_step(self, batch, stage):
         return self._shared_step(batch, "train")
