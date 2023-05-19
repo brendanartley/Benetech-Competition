@@ -28,6 +28,7 @@ for i, (img_path, validation) in tqdm(enumerate(df[['file_name', 'validation']].
     else:
         os.replace(config.TOP_DIR + "512x512/" + img_path, config.TOP_DIR + "train/"+ img_path)
         fpaths[i] = "train/" + img_path
+        
 df["file_name"] = fpaths
 df.to_csv(config.TOP_DIR + "metadata.csv", index=False)
 

@@ -7,8 +7,8 @@ def train(
 ):
     pl.seed_everything(config.seed, workers=True)
 
-    # if fast_dev_run:
-    #     num_workers = 0
+    if config.fast_dev_run == True:
+        config.num_workers = 1
 
     data_module = BenetechDataModule(
         data_dir = config.data_dir,
@@ -27,7 +27,7 @@ def train(
     )
 
     module = BenetechModule(
-        learning_rate = config.learning_rate,
+        learning_rate = config.lr,
         max_length = config.max_length,
         model_path = config.model_path,
         model_save_dir = config.model_save_dir,
@@ -51,6 +51,8 @@ def train(
         logger = logger,
         log_every_n_steps = config.log_every_n_steps,
         accumulate_grad_batches = config.accumulate_grad_batches,
+        val_check_interval = config.val_check_interval,
+        enable_checkpointing = False,
     )
 
     trainer.fit(module, datamodule=data_module)

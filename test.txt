@@ -1,0 +1,1 @@
+TITLE | Disagree <0x0A> 10 | Disagree <0x0A> 8 | Neutral <0x0A> 25 | Agree <0x0A> 30 | Agree <0x0A> 5

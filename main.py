@@ -13,9 +13,9 @@ config = SimpleNamespace(
     save_model = True,
     max_patches = 1024,
     max_length = 512,
-    batch_size = 3,
+    batch_size = 4,
     epochs = 1,
-    learning_rate = 1e-5,
+    lr = 2e-5,
     verbose = 2,
     num_workers = 4,
     seed = 0,
@@ -27,6 +27,7 @@ config = SimpleNamespace(
     precision = 32,
     log_every_n_steps = 10,
     accumulate_grad_batches = 1,
+    val_check_interval = 1000,
 )
 
 def parse_args():
@@ -35,7 +36,10 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=config.seed, help="Seed for reproducability.")
     parser.add_argument("--batch_size", type=int, default=config.batch_size, help="Num data points per batch.")
     parser.add_argument("--accumulate_grad_batches", type=int, default=config.accumulate_grad_batches, help="Number of steps before each optimizer step.")
-    parser.add_argument("--max_patches", type=int, default=config.batch_size, help="Max pathches for the pix2sctruct model.")
+    parser.add_argument("--max_patches", type=int, default=config.batch_size, help="Max patches for the pix2sctruct model.")
+    parser.add_argument("--epochs", type=int, default=config.epochs, help="Number of epochs to train.")
+    parser.add_argument("--lr", type=float, default=config.lr, help="Learning rate for the model.")
+    parser.add_argument("--val_check_interval", type=int, default=config.val_check_interval, help="Number of batches between validation checks.")
     args = parser.parse_args()
     
     # Update config w/ parameters passed through CLI

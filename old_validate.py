@@ -14,7 +14,7 @@ class CFG():
         self.MODEL_SAVE_DIR = ""
         self.MAX_PATCHES = 1024
         self.MAX_LENGTH = 512
-        self.BATCH_SIZE = 3
+        self.BATCH_SIZE = 1
         self.EPOCHS = 1
         self.LR = 1e-5
 
@@ -39,7 +39,7 @@ def collator(batch):
     texts = [item["text"] for item in batch]
 
     text_inputs = processor(text=texts, padding="longest", truncation=True, return_tensors="pt", add_special_tokens=True, max_length=config.MAX_LENGTH)
-    new_batch["labels"] = text_inputs.input_ids
+    new_batch["texts"] = texts
 
     for item in batch:
         new_batch["flattened_patches"].append(item["flattened_patches"])
@@ -60,9 +60,7 @@ if __name__ == "__main__":
 
     # Load Models
     processor = AutoProcessor.from_pretrained("google/deplot", is_vqa=False)
-    model = Pix2StructForConditionalGeneration.from_pretrained("/data/bartley/gpu_test/models/fallen-butterfly-20.pt")
-    model.config.text_config.is_decoder=True # Source: https://www.kaggle.com/competitions/benetech-making-graphs-accessible/discussion/406250
-    
+
     # Load dataset
     valid_dataset = ImageCaptioningDataset(dataset, processor)
     valid_dataloader = DataLoader(valid_dataset, shuffle=False, batch_size=config.BATCH_SIZE, collate_fn=collator)
@@ -71,24 +69,32 @@ if __name__ == "__main__":
     total_batches = len(valid_dataloader)
     print("Total batches: ", total_batches)
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model.to(device)
-    model.eval()
+    for tuned_path in ['azure-firefly-17.pt', 'feasible-sea-21.pt', 'summer-glade-29.pt', 'fallen-butterfly-20.pt','fiery-dew-25.pt']:
+        model = Pix2StructForConditionalGeneration.from_pretrained("/data/bartley/gpu_test/models/{}".format(tuned_path))
+        model.config.text_config.is_decoder=True # Source: https://www.kaggle.com/competitions/benetech-making-graphs-accessible/discussion/406250
+        
 
-    with open("./preds1b.txt", "w") as f:
-        for idx, batch in tqdm(enumerate(valid_dataloader), total = total_batches):
-            labels = batch.pop("labels").to(device)
-            flattened_patches = batch.pop("flattened_patches").to(device)
-            attention_mask = batch.pop("attention_mask").to(device)
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        model.to(device)
+        model.eval()
 
-            predictions = model.generate(
-                flattened_patches=flattened_patches, 
-                attention_mask=attention_mask, 
-                max_new_tokens=config.MAX_LENGTH,
-                eos_token_id=processor.tokenizer.eos_token_id,
-                pad_token_id=processor.tokenizer.pad_token_id,
-                no_repeat_ngram_size=10, #TODO: TEST HOW THIS AFFECTS
-                )
-            
-            for pred in processor.batch_decode(predictions, skip_special_tokens=True):
-                print("{}".format(pred), file=f)
+        with open("./preds.txt", "w") as f:
+            for idx, batch in tqdm(enumerate(valid_dataloader), total = total_batches):
+
+                flattened_patches = batch.pop("flattened_patches").to(device)
+                attention_mask = batch.pop("attention_mask").to(device)
+
+                predictions = model.generate(
+                    flattened_patches=flattened_patches, 
+                    attention_mask=attention_mask, 
+                    max_new_tokens=config.MAX_LENGTH,
+                    eos_token_id=processor.tokenizer.eos_token_id,
+                    pad_token_id=processor.tokenizer.pad_token_id,
+                    )
+                
+                for i, pred in enumerate(processor.batch_decode(predictions, skip_special_tokens=True)):
+                    # print("pred: {}".format(pred), file=f)
+                    print(tuned_path)
+                    print("pred: {}".format(pred))
+                    print("true: {}".format(batch["texts"][i]))
+                break
