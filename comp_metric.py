@@ -47,6 +47,8 @@ def benetech_score(ground_truth: pd.DataFrame, predictions: pd.DataFrame) -> flo
             scores.append(0.0)
         else:  # Score with RMSE or Levenshtein as appropriate
             scores.append(score_series(gt_series, pred_series))
+
+    print(scores)
     return np.mean(scores)
         
 

@@ -14,7 +14,7 @@ class CFG():
         self.MODEL_SAVE_DIR = ""
         self.MAX_PATCHES = 1024
         self.MAX_LENGTH = 512
-        self.BATCH_SIZE = 1
+        self.BATCH_SIZE = 4
         self.EPOCHS = 1
         self.LR = 1e-5
 
@@ -69,32 +69,33 @@ if __name__ == "__main__":
     total_batches = len(valid_dataloader)
     print("Total batches: ", total_batches)
 
-    for tuned_path in ['azure-firefly-17.pt', 'feasible-sea-21.pt', 'summer-glade-29.pt', 'fallen-butterfly-20.pt','fiery-dew-25.pt']:
-        model = Pix2StructForConditionalGeneration.from_pretrained("/data/bartley/gpu_test/models/{}".format(tuned_path))
-        model.config.text_config.is_decoder=True # Source: https://www.kaggle.com/competitions/benetech-making-graphs-accessible/discussion/406250
-        
+    # Selecting model to tune
+    tuned_model_paths = ['azure-firefly-17.pt', 'feasible-sea-21.pt', 'summer-glade-29.pt', 'fallen-butterfly-20.pt','fiery-dew-25.pt']
+    tuned_path = tuned_model_paths[0]
 
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        model.to(device)
-        model.eval()
+    model = Pix2StructForConditionalGeneration.from_pretrained("/data/bartley/gpu_test/models/{}".format(tuned_path))
+    model.config.text_config.is_decoder=True # Source: https://www.kaggle.com/competitions/benetech-making-graphs-accessible/discussion/406250
+    
 
-        with open("./preds.txt", "w") as f:
-            for idx, batch in tqdm(enumerate(valid_dataloader), total = total_batches):
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model.to(device)
+    model.eval()
 
-                flattened_patches = batch.pop("flattened_patches").to(device)
-                attention_mask = batch.pop("attention_mask").to(device)
+    with open("./preds.txt", "w") as f:
+        for idx, batch in tqdm(enumerate(valid_dataloader), total = total_batches):
 
-                predictions = model.generate(
-                    flattened_patches=flattened_patches, 
-                    attention_mask=attention_mask, 
-                    max_new_tokens=config.MAX_LENGTH,
-                    eos_token_id=processor.tokenizer.eos_token_id,
-                    pad_token_id=processor.tokenizer.pad_token_id,
-                    )
-                
-                for i, pred in enumerate(processor.batch_decode(predictions, skip_special_tokens=True)):
-                    # print("pred: {}".format(pred), file=f)
-                    print(tuned_path)
-                    print("pred: {}".format(pred))
-                    print("true: {}".format(batch["texts"][i]))
-                break
+            flattened_patches = batch.pop("flattened_patches").to(device)
+            attention_mask = batch.pop("attention_mask").to(device)
+
+            predictions = model.generate(
+                flattened_patches=flattened_patches, 
+                attention_mask=attention_mask, 
+                max_new_tokens=config.MAX_LENGTH,
+                early_stopping=True,
+                use_cache=True,
+                eos_token_id=processor.tokenizer.eos_token_id,
+                pad_token_id=processor.tokenizer.pad_token_id,
+                )
+            
+            for i, pred in enumerate(processor.batch_decode(predictions, skip_special_tokens=True)):
+                print("pred: {}".format(pred), file=f)

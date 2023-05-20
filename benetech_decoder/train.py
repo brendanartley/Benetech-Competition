@@ -1,6 +1,6 @@
 import pytorch_lightning as pl
-from benetech_pl.modules import BenetechDataModule, BenetechModule
-from benetech_pl.helpers import load_logger_and_callbacks
+from benetech_decoder.modules import BenetechDataModule, BenetechModule
+from benetech_decoder.helpers import load_logger_and_callbacks
 
 def train(
         config,
@@ -23,6 +23,7 @@ def train(
         fast_dev_run = config.fast_dev_run,
         metrics = {"val_loss": "min", "train_loss": "min"},
         overfit_batches = config.overfit_batches,
+        no_wandb = config.no_wandb,
         project = config.project,
     )
 

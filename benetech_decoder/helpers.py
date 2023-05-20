@@ -4,6 +4,7 @@ def load_logger_and_callbacks(
     fast_dev_run,
     metrics,
     overfit_batches,
+    no_wandb,
     project,
 ):
     """
@@ -14,7 +15,7 @@ def load_logger_and_callbacks(
         callbacks: lightning callbacks
     """
     # Params used to check for Bugs/Errors in Implementation
-    if fast_dev_run or overfit_batches > 0:
+    if fast_dev_run or overfit_batches > 0 or no_wandb == True:
         logger, callbacks = None, None
     else:
         logger, id_ = get_logger(

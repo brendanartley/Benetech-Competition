@@ -31,12 +31,12 @@ Sweeps Lesson Files: https://github.com/wandb/edu/tree/main/mlops-001/lesson2
 Run a sweep on a specific GPU
 ```
 # Training scripts
-CUDA_VISIBLE_DEVICES=0 python main.py --batch_size=4 --lr=0.00002 --epochs=3
+CUDA_VISIBLE_DEVICES=0 python main.py --batch_size=4 --lr=0.00002 --epochs=3 --no_wandb
 CUDA_VISIBLE_DEVICES=1 python main.py --batch_size=3 --lr=0.00001 --epochs=3
 CUDA_VISIBLE_DEVICES=2 python main.py --batch_size=4 --lr=0.00001 --epochs=4
 
 # Current evaluation scripts
 CUDA_VISIBLE_DEVICES=0 python old_validate.py
 CUDA_VISIBLE_DEVICES=1 python old_validate.py
-CUDA_VISIBLE_DEVICES=1 python test.py
+CUDA_VISIBLE_DEVICES=1 python infer_image.py
 ```

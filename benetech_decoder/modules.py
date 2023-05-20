@@ -103,6 +103,7 @@ class BenetechDataModule(pl.LightningDataModule):
             )
         
         new_batch["labels"] = text_inputs.input_ids
+        new_batch["texts"] = texts
 
         for item in batch:
             new_batch["flattened_patches"].append(item["flattened_patches"])
@@ -127,6 +128,7 @@ class BenetechModule(pl.LightningModule):
         self.save_hyperparameters()
         self.model = self._init_model()
         self.processor = processor
+        self.validation_step_outputs = []
 
     def _init_model(self):
         if self.hparams.model_path == "google/deplot":
@@ -134,7 +136,7 @@ class BenetechModule(pl.LightningModule):
                 "google/deplot", 
                 is_vqa=False,
                 )
-             # Source: https://www.kaggle.com/competitions/benetech-making-graphs-accessible/discussion/406250
+            # Source: https://www.kaggle.com/competitions/benetech-making-graphs-accessible/discussion/406250
             model.config.text_config.is_decoder = True
             return model
         else:
@@ -153,15 +155,16 @@ class BenetechModule(pl.LightningModule):
             )
     
     def validation_step(self, batch, batch_idx):
-        self._shared_step(batch, "valid")
+        pred = self._shared_step(batch, "valid")
+        self.validation_step_outputs.append(pred)
     
     def training_step(self, batch, stage):
         return self._shared_step(batch, "train")
     
     def _shared_step(self, batch, stage):
-        labels = batch.pop("labels")#.to(device)
-        flattened_patches = batch.pop("flattened_patches")#.to(device)
-        attention_mask = batch.pop("attention_mask")#.to(device)
+        labels = batch.pop("labels")
+        flattened_patches = batch.pop("flattened_patches")
+        attention_mask = batch.pop("attention_mask")
 
         # Make Predictions
         outputs = self.model(
@@ -173,7 +176,21 @@ class BenetechModule(pl.LightningModule):
         # Log Loss
         loss = outputs.loss
         self._log(stage, loss, batch_size=len(labels))
-        return loss
+        if stage == "valid":
+            # Generate text for Benetech Scoring
+            predictions = self.model.generate(
+                flattened_patches=flattened_patches, 
+                attention_mask=attention_mask, 
+                max_new_tokens=self.hparams.max_length,
+                early_stopping=True,
+                use_cache=True,
+                eos_token_id=self.processor.tokenizer.eos_token_id,
+                pad_token_id=self.processor.tokenizer.pad_token_id,
+                )
+            return batch.pop("texts"), self.processor.batch_decode(predictions, skip_special_tokens=True)
+        
+        else:
+            return loss
     
     def _log(self, stage, loss, batch_size):
         self.log(f"{stage}_loss", loss, batch_size=batch_size)
@@ -182,3 +199,11 @@ class BenetechModule(pl.LightningModule):
         if self.hparams.save_model == True:
             self.model.save_pretrained('{}{}.pt'.format(self.hparams.model_save_dir, self.hparams.run_name))
         return
+    
+    def on_validation_epoch_end(self):
+        all_preds = self.validation_step_outputs
+        print(len(all_preds))
+        print(all_preds[0])
+        # do something with all preds
+        ...
+        self.validation_step_outputs.clear()  # free memory (removes all elements in arr)
