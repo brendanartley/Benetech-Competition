@@ -1,9 +1,12 @@
 import torch
 from torch import nn
+import torchmetrics
 import pytorch_lightning as pl
 
 from datasets import load_dataset
 from transformers import AutoProcessor, Pix2StructForConditionalGeneration
+
+from benetech_decoder.metrics import BenetechMetric
 
 
 class ImageCaptioningDataset(torch.utils.data.Dataset):
@@ -129,6 +132,7 @@ class BenetechModule(pl.LightningModule):
         self.model = self._init_model()
         self.processor = processor
         self.validation_step_outputs = []
+        self.metrics = self._init_metrics()
 
     def _init_model(self):
         if self.hparams.model_path == "google/deplot":
@@ -142,21 +146,26 @@ class BenetechModule(pl.LightningModule):
         else:
             raise ValueError(f"{self.hparams.model_path} is not a valid model")
     
-    def configure_optimizers(self):
-        optimizer = self._init_optimizer()
-        return {
-            "optimizer": optimizer,
-        }
-    
     def _init_optimizer(self):
         return torch.optim.AdamW(
             self.model.parameters(), 
             lr=self.hparams.learning_rate,
             )
     
+    def _init_metrics(self):
+        metrics = {
+            "benetech": BenetechMetric(),
+        }
+        return metrics
+
+    def configure_optimizers(self):
+        optimizer = self._init_optimizer()
+        return {
+            "optimizer": optimizer,
+        }
+    
     def validation_step(self, batch, batch_idx):
         pred = self._shared_step(batch, "valid")
-        self.validation_step_outputs.append(pred)
     
     def training_step(self, batch, stage):
         return self._shared_step(batch, "train")
@@ -187,8 +196,14 @@ class BenetechModule(pl.LightningModule):
                 eos_token_id=self.processor.tokenizer.eos_token_id,
                 pad_token_id=self.processor.tokenizer.pad_token_id,
                 )
-            return batch.pop("texts"), self.processor.batch_decode(predictions, skip_special_tokens=True)
-        
+            
+            # Decode texts and get ground truths
+            predictions = self.processor.batch_decode(predictions, skip_special_tokens=True)
+            ground_truths = batch.pop("texts")
+
+            # Compute benetech score
+            self.metrics["benetech"](ground_truths, predictions)
+            self.log("benetech_score", self.metrics["benetech"].compute(), on_epoch=True, batch_size=len(labels))
         else:
             return loss
     
@@ -202,8 +217,6 @@ class BenetechModule(pl.LightningModule):
     
     def on_validation_epoch_end(self):
         all_preds = self.validation_step_outputs
-        print(len(all_preds))
-        print(all_preds[0])
         # do something with all preds
         ...
         self.validation_step_outputs.clear()  # free memory (removes all elements in arr)

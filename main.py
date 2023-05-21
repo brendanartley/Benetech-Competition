@@ -4,8 +4,8 @@ from types import SimpleNamespace
 
 # defaults
 config = SimpleNamespace(
-    # data_dir = "/data/bartley/gpu_test/bartley-benetech-resized/",    
-    data_dir = "/data/bartley/gpu_test/bartley-benetech-resized-small/",
+    data_dir = "/data/bartley/gpu_test/bartley-benetech-resized/",    
+    # data_dir = "/data/bartley/gpu_test/bartley-benetech-resized-small/",
     model_save_dir = "/data/bartley/gpu_test/models/",
     model_path = "google/deplot",
     processor_path = "google/deplot",
@@ -18,7 +18,7 @@ config = SimpleNamespace(
     epochs = 1,
     lr = 2e-5,
     verbose = 2,
-    num_workers = 4,
+    num_workers = 8,
     seed = 0,
     # -- Trainer Config --
     accelerator = "gpu",
@@ -28,7 +28,7 @@ config = SimpleNamespace(
     precision = 32,
     log_every_n_steps = 10,
     accumulate_grad_batches = 1,
-    val_check_interval = 0.26, # Set just above desired as validaion happens at end of training
+    val_check_interval = None, # Set just above desired as validaion happens at end of training
 )
 
 def parse_args():
