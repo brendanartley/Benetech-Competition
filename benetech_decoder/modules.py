@@ -208,7 +208,7 @@ class BenetechModule(pl.LightningModule):
             return loss
     
     def _log(self, stage, loss, batch_size):
-        self.log(f"{stage}_loss", loss, batch_size=batch_size)
+        self.log(f"{stage}_loss", loss, prog_bar=True, batch_size=batch_size)
 
     def on_train_end(self):
         if self.hparams.save_model == True:

@@ -34,6 +34,7 @@ config = SimpleNamespace(
 def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--fast_dev_run', action='store_true', help='Check PL modules are set up correctly.')
+    parser.add_argument("--overfit_batches", type=int, default=config.overfit_batches, help="Num of batches to overfit (sanity check).")
     parser.add_argument('--no_wandb', action='store_true', help='Wether to log with weights and biases.')
     parser.add_argument("--seed", type=int, default=config.seed, help="Seed for reproducability.")
     parser.add_argument("--batch_size", type=int, default=config.batch_size, help="Num data points per batch.")

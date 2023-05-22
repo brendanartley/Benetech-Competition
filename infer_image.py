@@ -4,9 +4,10 @@ import torch
 from PIL import Image
 
 class CFG:
-    img_path = "https://www.jmp.com/en_nl/statistics-knowledge-portal/exploratory-data-analysis/bar-chart/_jcr_content/par/styledcontainer_2069/par/image.img.png/1594745266124.png"
-    # model_path = "google/deplot"
-    model_path = "/data/bartley/gpu_test/models/azure-firefly-17.pt"
+    # img_path = "https://www.jmp.com/en_nl/statistics-knowledge-portal/exploratory-data-analysis/bar-chart/_jcr_content/par/styledcontainer_2069/par/image.img.png/1594745266124.png"
+    img_path = "https://www.mathworks.com/help/examples/graphics/win64/CombineLineAndBarChartsUsingTwoYAxesExample_01.png"
+    model_path = "google/deplot"
+    # model_path = "/data/bartley/gpu_test/models/azure-firefly-17.pt"
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     MAX_TOKENS = 512
