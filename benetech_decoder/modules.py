@@ -135,9 +135,9 @@ class BenetechModule(pl.LightningModule):
         self.metrics = self._init_metrics()
 
     def _init_model(self):
-        if self.hparams.model_path == "google/deplot":
+        if self.hparams.model_path == "google/deplot" or self.hparams.model_path == "google/matcha-base":
             model = Pix2StructForConditionalGeneration.from_pretrained(
-                "google/deplot", 
+                self.hparams.model_path, 
                 is_vqa=False,
                 )
             # Source: https://www.kaggle.com/competitions/benetech-making-graphs-accessible/discussion/406250
@@ -214,9 +214,3 @@ class BenetechModule(pl.LightningModule):
         if self.hparams.save_model == True:
             self.model.save_pretrained('{}{}.pt'.format(self.hparams.model_save_dir, self.hparams.run_name))
         return
-    
-    def on_validation_epoch_end(self):
-        all_preds = self.validation_step_outputs
-        # do something with all preds
-        ...
-        self.validation_step_outputs.clear()  # free memory (removes all elements in arr)

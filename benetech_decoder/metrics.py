@@ -69,7 +69,7 @@ class BenetechMetric(Metric):
     
     def process_prediction(self, string):
         try:
-            tmp = [x.strip().split(" ") for x in string.split("|")]
+            tmp = [x.strip().split(" ") for x in string.split("<0x0A>")]
             xs = [x[0] for x in tmp]
             ys = [x[-1] for x in tmp]
 
