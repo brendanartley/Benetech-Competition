@@ -54,6 +54,7 @@ def train(
         accumulate_grad_batches = config.accumulate_grad_batches,
         val_check_interval = config.val_check_interval,
         enable_checkpointing = False,
+        gradient_clip_val = 1.0,
     )
 
     trainer.fit(module, datamodule=data_module)

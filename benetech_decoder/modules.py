@@ -1,6 +1,4 @@
 import torch
-from torch import nn
-import torchmetrics
 import pytorch_lightning as pl
 
 from datasets import load_dataset
@@ -98,7 +96,7 @@ class BenetechDataModule(pl.LightningDataModule):
 
         text_inputs = self.processor(
             text = texts, 
-            padding = "longest", 
+            padding = "max_length", 
             truncation = True, 
             return_tensors = "pt", 
             add_special_tokens = True,
@@ -135,13 +133,11 @@ class BenetechModule(pl.LightningModule):
         self.metrics = self._init_metrics()
 
     def _init_model(self):
-        if self.hparams.model_path == "google/deplot" or self.hparams.model_path == "google/matcha-base":
+        if self.hparams.model_path in ["google/deplot", "google/matcha-base", "google/pix2struct-base"]:
             model = Pix2StructForConditionalGeneration.from_pretrained(
                 self.hparams.model_path, 
                 is_vqa=False,
                 )
-            # Source: https://www.kaggle.com/competitions/benetech-making-graphs-accessible/discussion/406250
-            model.config.text_config.is_decoder = True
             return model
         else:
             raise ValueError(f"{self.hparams.model_path} is not a valid model")
@@ -165,12 +161,12 @@ class BenetechModule(pl.LightningModule):
         }
     
     def validation_step(self, batch, batch_idx):
-        pred = self._shared_step(batch, "valid")
+        pred = self._shared_step(batch, "valid", batch_idx)
     
-    def training_step(self, batch, stage):
-        return self._shared_step(batch, "train")
+    def training_step(self, batch, batch_idx):
+        return self._shared_step(batch, "train", batch_idx)
     
-    def _shared_step(self, batch, stage):
+    def _shared_step(self, batch, stage, batch_idx):
         labels = batch.pop("labels")
         flattened_patches = batch.pop("flattened_patches")
         attention_mask = batch.pop("attention_mask")
@@ -179,12 +175,13 @@ class BenetechModule(pl.LightningModule):
         outputs = self.model(
             flattened_patches=flattened_patches,
             attention_mask=attention_mask,
-            labels=labels
+            labels=labels,
             )
         
         # Log Loss
         loss = outputs.loss
         self._log(stage, loss, batch_size=len(labels))
+
         if stage == "valid":
             # Generate text for Benetech Scoring
             predictions = self.model.generate(
@@ -200,6 +197,12 @@ class BenetechModule(pl.LightningModule):
             # Decode texts and get ground truths
             predictions = self.processor.batch_decode(predictions, skip_special_tokens=True)
             ground_truths = batch.pop("texts")
+
+            # Log predictions on first batch
+            if batch_idx == 0:
+                for gt, pred in zip(ground_truths, predictions):
+                    print("True: ", gt)
+                    print("Pred: ", pred)
 
             # Compute benetech score
             self.metrics["benetech"](ground_truths, predictions)

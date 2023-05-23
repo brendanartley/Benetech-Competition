@@ -5,10 +5,13 @@ from types import SimpleNamespace
 # defaults
 config = SimpleNamespace(
     data_dir = "/data/bartley/gpu_test/bartley-benetech-resized/",    
+    # data_dir = "/data/bartley/gpu_test/bartley-benetech-resized-2/",    
     # data_dir = "/data/bartley/gpu_test/bartley-benetech-resized-small/",
     model_save_dir = "/data/bartley/gpu_test/models/",
-    model_path = "google/matcha-base",
-    processor_path = "google/matcha-base",
+    # model_path = "google/pix2struct-base",
+    # processor_path = "google/pix2struct-base",
+    model_path = "google/deplot",
+    processor_path = "google/deplot",
     no_wandb = False,
     project = "Benetech",
     save_model = True,
@@ -16,7 +19,7 @@ config = SimpleNamespace(
     max_length = 512,
     batch_size = 4,
     epochs = 1,
-    lr = 2e-5,
+    lr = 3e-5,
     verbose = 2,
     num_workers = 8,
     seed = 0,
@@ -26,13 +29,16 @@ config = SimpleNamespace(
     overfit_batches = 0,
     devices = 1,
     precision = 32,
-    log_every_n_steps = 10,
+    log_every_n_steps = 100,
     accumulate_grad_batches = 1,
-    val_check_interval = None, # Set just above desired as validaion happens at end of training
+    val_check_interval = None,
 )
 
 def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--data_dir", type=str, default=config.data_dir, help="Data directory path.")
+    parser.add_argument("--model_path", type=str, default=config.model_path, help="Huggingface model path.")
+    parser.add_argument("--processor_path", type=str, default=config.processor_path, help="Huggingface processor path.")
     parser.add_argument('--fast_dev_run', action='store_true', help='Check PL modules are set up correctly.')
     parser.add_argument("--overfit_batches", type=int, default=config.overfit_batches, help="Num of batches to overfit (sanity check).")
     parser.add_argument('--no_wandb', action='store_true', help='Wether to log with weights and biases.')
