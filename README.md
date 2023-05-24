@@ -31,8 +31,8 @@ Sweeps Lesson Files: https://github.com/wandb/edu/tree/main/mlops-001/lesson2
 Run a sweep on a specific GPU
 ```
 # Training scripts
-CUDA_VISIBLE_DEVICES=0 python main.py --seed=0 --epochs=15
-CUDA_VISIBLE_DEVICES=1 python main.py --seed=1 --epochs=15
+CUDA_VISIBLE_DEVICES=0 python main.py --seed=0 --epochs=2 --val_check_interval=0.26
+CUDA_VISIBLE_DEVICES=1 python main.py --seed=1 --epochs=2
 CUDA_VISIBLE_DEVICES=1 python main.py --epochs=1000 --overfit_batches=1 --lr=0.00003
 CUDA_VISIBLE_DEVICES=2 python main.py --epochs=10 --model_path
 
@@ -44,4 +44,7 @@ CUDA_VISIBLE_DEVICES=3 python main.py --seed=1 --epochs=5 --val_check_interval=0
 CUDA_VISIBLE_DEVICES=0 python infer_image.py
 CUDA_VISIBLE_DEVICES=1 python infer_image.py
 CUDA_VISIBLE_DEVICES=2 python infer_image.py
+
+
+CUDA_VISIBLE_DEVICES=2 python classifier_train.py
 ```

@@ -1,6 +1,6 @@
 import pytorch_lightning as pl
-from benetech_decoder.modules import BenetechDataModule, BenetechModule
-from benetech_decoder.helpers import load_logger_and_callbacks
+from benetech_classifier.modules import BenetechClassifierModule, BenetechClassifierDataModule
+from benetech_classifier.helpers import load_logger_and_callbacks
 
 def train(
         config,
@@ -10,30 +10,29 @@ def train(
     if config.fast_dev_run == True:
         config.num_workers = 1
 
-    data_module = BenetechDataModule(
+    data_module = BenetechClassifierDataModule(
         data_dir = config.data_dir,
         batch_size = config.batch_size,
-        processor_path = config.processor_path,
-        max_length = config.max_length,
         num_workers = config.num_workers,
-        max_patches = config.max_patches,
         cache_dir = config.cache_dir,
     )
 
     logger, callbacks = load_logger_and_callbacks(
         fast_dev_run = config.fast_dev_run,
-        metrics = {"val_loss": "min", "train_loss": "min"},
+        metrics = {
+            "val_loss": "min", 
+            "train_loss": "min",
+            "val_acc": "max",
+            },
         overfit_batches = config.overfit_batches,
         no_wandb = config.no_wandb,
         project = config.project,
     )
 
-    module = BenetechModule(
+    module = BenetechClassifierModule(
         learning_rate = config.lr,
-        max_length = config.max_length,
-        model_path = config.model_path,
         model_save_dir = config.model_save_dir,
-        processor = data_module.processor,
+        model_path = config.model_path,
         run_name = logger._experiment.name if logger else None,
         save_model = config.save_model,
         cache_dir = config.cache_dir,
@@ -49,7 +48,6 @@ def train(
         num_sanity_val_steps = 1,
         overfit_batches = config.overfit_batches,
         precision = config.precision,
-        # strategy= "ddp" if config.devices > 1 else None,
         callbacks = callbacks,
         logger = logger,
         log_every_n_steps = config.log_every_n_steps,
@@ -60,7 +58,4 @@ def train(
     )
 
     trainer.fit(module, datamodule=data_module)
-
-    # TODO: Set up code to run generation and score with benetech_score() method
-    # trainer.test(module, datamodule=data_module)
     return

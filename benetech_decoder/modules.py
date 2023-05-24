@@ -1,11 +1,11 @@
 import torch
 import pytorch_lightning as pl
+import pandas as pd
+from PIL import Image
 
 from datasets import load_dataset
 from transformers import AutoProcessor, Pix2StructForConditionalGeneration
-
 from benetech_decoder.metrics import BenetechMetric
-
 
 class ImageCaptioningDataset(torch.utils.data.Dataset):
     def __init__(self, dataset, processor, max_patches):
@@ -18,7 +18,7 @@ class ImageCaptioningDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         item = self.dataset[idx]
-        encoding = self.processor(images=item["image"], text="", return_tensors="pt", add_special_tokens=True, max_patches=self.max_patches)        
+        encoding = self.processor(images=item["image"], text="", return_tensors="pt", max_patches=self.max_patches)        
         encoding = {k:v.squeeze() for k,v in encoding.items()}
         encoding["text"] = item["text"]
         return encoding
@@ -32,11 +32,11 @@ class BenetechDataModule(pl.LightningDataModule):
         max_length: int,
         num_workers: int,
         max_patches: int,
+        cache_dir: str,
     ):
         super().__init__()
         self.save_hyperparameters()
-        self.processor = AutoProcessor.from_pretrained(processor_path, is_vqa=False)
-
+        self.processor = AutoProcessor.from_pretrained(processor_path, is_vqa=False, cache_dir=cache_dir)
         self.train_transform, self.val_transform = self._init_transforms()
     
     def _init_transforms(self):
@@ -55,13 +55,13 @@ class BenetechDataModule(pl.LightningDataModule):
     def _dataset(self, train):
         if train == True:
             return ImageCaptioningDataset(
-                dataset = load_dataset("imagefolder", data_dir=self.hparams.data_dir, split="train"),
+                dataset = load_dataset("imagefolder", data_dir=self.hparams.data_dir, split="train", cache_dir=self.hparams.cache_dir),
                 processor = self.processor,
                 max_patches = self.hparams.max_patches,
             )
         else:
             return ImageCaptioningDataset(
-                dataset = load_dataset("imagefolder", data_dir=self.hparams.data_dir, split="validation"),
+                dataset = load_dataset("imagefolder", data_dir=self.hparams.data_dir, split="validation", cache_dir=self.hparams.cache_dir),
                 processor = self.processor,
                 max_patches = self.hparams.max_patches,
             )
@@ -94,11 +94,18 @@ class BenetechDataModule(pl.LightningDataModule):
         new_batch = {"flattened_patches":[], "attention_mask":[]}
         texts = [item["text"] for item in batch]
 
+        # text_inputs = self.processor(
+        #     text = texts, 
+        #     return_tensors = "pt", 
+        #     add_special_tokens = True,
+        #     max_length = self.hparams.max_length,
+        #     )
+
         text_inputs = self.processor(
             text = texts, 
-            padding = "max_length", 
-            truncation = True, 
             return_tensors = "pt", 
+            padding = "longest",
+            truncation = True,
             add_special_tokens = True,
             max_length = self.hparams.max_length,
             )
@@ -119,6 +126,7 @@ class BenetechModule(pl.LightningModule):
         self,
         learning_rate: float,
         max_length: int,
+        cache_dir: str,
         model_path: str,
         model_save_dir: str,
         run_name: str,
@@ -137,6 +145,7 @@ class BenetechModule(pl.LightningModule):
             model = Pix2StructForConditionalGeneration.from_pretrained(
                 self.hparams.model_path, 
                 is_vqa=False,
+                cache_dir=self.hparams.cache_dir,
                 )
             return model
         else:
@@ -183,6 +192,7 @@ class BenetechModule(pl.LightningModule):
         self._log(stage, loss, batch_size=len(labels))
 
         if stage == "valid":
+
             # Generate text for Benetech Scoring
             predictions = self.model.generate(
                 flattened_patches=flattened_patches, 
