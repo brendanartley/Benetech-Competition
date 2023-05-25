@@ -1,0 +1,26 @@
+# The program to run
+program: classifier_train.py
+
+# Method can be grid, random or bayes
+method: grid
+
+# Project this sweep is part of
+project: Benetech-Classifier
+
+# Metric to optimize
+metric:
+  name: val_acc
+  goal: maximize
+
+# Parameters space to search
+parameters:
+  label_smoothing: 
+    values: [0.1, 0.2, 0.3, 0.4]
+  model_path:
+    values: ["B0", "B1", "B2", "B3", "B4"]
+  batch_size:
+    values: [16, 32]
+  lr:
+    values: [1e-4, 1e-5]
+  epochs:
+    value: 5

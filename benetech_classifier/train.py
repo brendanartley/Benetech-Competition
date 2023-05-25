@@ -15,6 +15,7 @@ def train(
         batch_size = config.batch_size,
         num_workers = config.num_workers,
         cache_dir = config.cache_dir,
+        model_path = config.model_path,
     )
 
     logger, callbacks = load_logger_and_callbacks(
@@ -23,6 +24,7 @@ def train(
             "val_loss": "min", 
             "train_loss": "min",
             "val_acc": "max",
+            "train_acc": "max",
             },
         overfit_batches = config.overfit_batches,
         no_wandb = config.no_wandb,
@@ -36,6 +38,8 @@ def train(
         run_name = logger._experiment.name if logger else None,
         save_model = config.save_model,
         cache_dir = config.cache_dir,
+        num_classes = config.num_classes,
+        label_smoothing = config.label_smoothing,
     )
 
     # Trainer Args: https://lightning.ai/docs/pytorch/stable/common/trainer.html#benchmark

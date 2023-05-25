@@ -2,8 +2,11 @@ import pytorch_lightning as pl
 import torchvision
 from torchvision import transforms
 import torch
+import torch.nn as nn
+import torch.optim as optim
 import torchmetrics
 import torchinfo
+import torch.nn.functional as F
 
 import pandas as pd
 from PIL import Image
@@ -11,31 +14,40 @@ from PIL import Image
 class BenetechClassifierDataset(torch.utils.data.Dataset):
     def __init__(self, data_dir, train=True, transform=None):
         self.data_dir = data_dir
-        self.df = self.load_df(train)
+        self.imgs, self.labels = self.load_df(train)
+
         self.transform = transform
 
     def load_df(self, train):
+        # Load data
         df = pd.read_csv(self.data_dir + "metadata.csv")
         if train == True:
             df = df[df.validation == False].reset_index(drop=True)
         else:
             df = df[df.validation == True].reset_index(drop=True)
-        return df
+
+        # Create img paths and one hot labels
+        imgs = df.file_name
+
+        # Mapping
+        class_map = {'vertical_bar': 0, 'horizontal_bar': 1, 'line': 2, 'scatter': 3, 'dot': 4}
+        labels = F.one_hot(
+            torch.from_numpy(df.chart_type.map(class_map).values), 
+            num_classes=5,
+            ).type(torch.DoubleTensor)
+        return imgs, labels
 
     def __len__(self):
-        return len(self.df)
+        return len(self.imgs)
 
     def __getitem__(self, idx):
-        item = self.df.iloc[idx]
-        image = Image.open(self.data_dir + item.file_name)
+        image = Image.open(self.data_dir + self.imgs.iloc[idx])
+        label = self.labels[idx]
 
         if self.transform:
             image = self.transform(image)
 
-        return {
-            "image": image,
-            "chart_type": item.chart_type,
-        }
+        return image, label
 
 class BenetechClassifierDataModule(pl.LightningDataModule):
     def __init__(
@@ -44,22 +56,28 @@ class BenetechClassifierDataModule(pl.LightningDataModule):
         batch_size: int,
         num_workers: int,
         cache_dir: str,
+        model_path: str,
     ):
         super().__init__()
         self.save_hyperparameters()
         self.train_transform, self.val_transform = self._init_transforms()
     
     def _init_transforms(self):
+        # Get dimensions of model
+        effnet_mappings = {"B0": 224, "B1": 240, "B2": 260, "B3": 300, "B4": 380}
+        if self.hparams.model_path not in effnet_mappings.keys():
+            raise ValueError(f"{self.hparams.model_path} is not a valid model")
+        dimensions = effnet_mappings[self.hparams.model_path]
+
+        # Set Transforms
         train_transform = transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
+            transforms.CenterCrop(dimensions),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], 
                         std=[0.229, 0.224, 0.225]),
         ])
         val_transform = transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
+            transforms.CenterCrop(dimensions),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], 
                         std=[0.229, 0.224, 0.225]),
@@ -72,7 +90,7 @@ class BenetechClassifierDataModule(pl.LightningDataModule):
             self.val_dataset = self._dataset(train=False, transform=self.val_transform)
             
     def _dataset(self, train, transform):
-        return BenetechClassifierDataset(data_dir=self.hparams.data_dir, transform=transform)
+        return BenetechClassifierDataset(data_dir=self.hparams.data_dir, train=train, transform=transform)
     
     def train_dataloader(self):
         return self._dataloader(self.train_dataset, train=True)
@@ -98,29 +116,57 @@ class BenetechClassifierModule(pl.LightningModule):
         model_path: str,
         run_name: str,
         save_model: bool,
+        num_classes: int,
+        label_smoothing: float,
     ):
         super().__init__()
         self.save_hyperparameters()
         self.model = self._init_model()
         self.metrics = self._init_metrics()
+        self.loss_fn = self._init_loss_fn()
 
     def _init_model(self):
-        if self.hparams.model_path in ["B0"]:
+        if self.hparams.model_path == "B0":
             model = torchvision.models.efficientnet_b0()
-            return model
+        elif self.hparams.model_path == "B1":
+            model = torchvision.models.efficientnet_b1()
+        elif self.hparams.model_path == "B2":
+            model = torchvision.models.efficientnet_b2()
+        elif self.hparams.model_path == "B3":
+            model = torchvision.models.efficientnet_b3()
+        elif self.hparams.model_path == "B4":
+            model = torchvision.models.efficientnet_b4()
         else:
             raise ValueError(f"{self.hparams.model_path} is not a valid model")
+        
+        # Updating model with correct output shape
+        num_ftrs = model.classifier[1].in_features
+        model.classifier[1] = nn.Linear(num_ftrs, self.hparams.num_classes) 
+
+        # Get dimensions of model
+        effnet_mappings = {"B0": 224, "B1": 240, "B2": 260, "B3": 300, "B4": 380}
+        dimensions = effnet_mappings[self.hparams.model_path]
+
+        # Print model summary
+        torchinfo.summary(model, input_size=(64, 3, dimensions, dimensions))
+        return model
     
     def _init_optimizer(self):
-        return torch.optim.AdamW(
-            self.model.parameters(), 
+        return optim.AdamW(
+            self.parameters(), 
             lr=self.hparams.learning_rate,
+            )
+    
+    def _init_loss_fn(self):
+        return nn.CrossEntropyLoss(
+            label_smoothing = self.hparams.label_smoothing,
             )
     
     def _init_metrics(self):
         metrics = {
-            "acc": torchmetrics.classification.MulticlassAccuracy(
-                num_classes=5
+            "acc": torchmetrics.Accuracy(
+                task = "multiclass",
+                num_classes = self.hparams.num_classes,
             ),
         }
         metric_collection = torchmetrics.MetricCollection(metrics)
@@ -141,31 +187,22 @@ class BenetechClassifierModule(pl.LightningModule):
     def forward(self, x):
         return self.model(x)
     
-    def _forward_pass(self, batch):
-        #TODO: Sort out what happens from here
-        print(batch)
-        x, y = batch
-        y = y.view(-1)
-        y_pred = self(x)
-        return x, y, y_pred
-    
     def _shared_step(self, batch, stage, batch_idx):
-        x, y, y_pred = self._forward_pass(batch)
-        loss = self.loss_fn(y_pred, y)
-        self.metrics[f"{stage}_metrics"](y_pred, y)
+        x, y = batch
+        y_logits = self(x) # Raw logits
+        loss = self.loss_fn(y_logits, y)
+
+        y_preds = torch.argmax(y_logits, dim=1) # Preds
+        self.metrics[f"{stage}_metrics"](y_preds, torch.argmax(y, dim=1))
         self._log(stage, loss, batch_size=len(x))
         return loss
     
     def validation_step(self, batch, batch_idx):
-        pred = self._shared_step(batch, "valid", batch_idx)
+        pred = self._shared_step(batch, "val", batch_idx)
     
     def training_step(self, batch, batch_idx):
         return self._shared_step(batch, "train", batch_idx)
     
     def _log(self, stage, loss, batch_size):
         self.log(f"{stage}_loss", loss, prog_bar=True, batch_size=batch_size)
-
-    def on_train_end(self):
-        # if self.hparams.save_model == True:
-        #     self.model.save_pretrained('{}{}.pt'.format(self.hparams.model_save_dir, self.hparams.run_name))
-        return
+        self.log_dict(self.metrics[f"{stage}_metrics"], prog_bar=True, batch_size=batch_size)
