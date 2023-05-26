@@ -40,6 +40,8 @@ def train(
         cache_dir = config.cache_dir,
         num_classes = config.num_classes,
         label_smoothing = config.label_smoothing,
+        epochs = config.epochs,
+        scheduler = config.scheduler,
     )
 
     # Trainer Args: https://lightning.ai/docs/pytorch/stable/common/trainer.html#benchmark

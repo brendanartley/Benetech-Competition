@@ -118,6 +118,8 @@ class BenetechClassifierModule(pl.LightningModule):
         save_model: bool,
         num_classes: int,
         label_smoothing: float,
+        epochs: int,
+        scheduler: str,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -156,6 +158,16 @@ class BenetechClassifierModule(pl.LightningModule):
             self.parameters(), 
             lr=self.hparams.learning_rate,
             )
+
+    def _init_scheduler(self, optimizer):
+        if self.hparams.scheduler == "CosineAnnealingLR":
+            return torch.optim.lr_scheduler.CosineAnnealingLR(
+                optimizer, 
+                T_max = self.hparams.epochs,
+                eta_min = 1e-8,
+                )
+        else:
+            raise ValueError(f"{self.hparams.scheduler} is not a valid scheduler.")
     
     def _init_loss_fn(self):
         return nn.CrossEntropyLoss(
@@ -180,8 +192,13 @@ class BenetechClassifierModule(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = self._init_optimizer()
+        scheduler = self._init_scheduler(optimizer)
         return {
             "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "interval": "epoch",
+            },
         }
     
     def forward(self, x):

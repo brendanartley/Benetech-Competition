@@ -2,22 +2,21 @@ from benetech_classifier.train import train
 import argparse
 from types import SimpleNamespace
 
-{"B0": 224, "B1": 240, "B2": 260, "B3": 300, "B4": 380, "B5": 456}
-
 # defaults
 config = SimpleNamespace(
     data_dir = "/data/bartley/gpu_test/bartley-benetech-resized/",    
     model_save_dir = "/data/bartley/gpu_test/models/",
     cache_dir = "/data/bartley/gpu_test/HF_CACHE",
-    model_path = "B0", # EfficientNet - B1-B5 are implemented
+    model_path = "B1", # EfficientNet - B1-B4 are implemented
     no_wandb = True,
     project = "Benetech-Classifier",
     save_model = True,
     num_classes = 5,
-    batch_size = 3,
+    batch_size = 16,
     epochs = 1,
-    lr = 3e-5,
-    label_smoothing = 0.1,
+    lr = 1e-4,
+    label_smoothing = 0.10,
+    scheduler = "CosineAnnealingLR",
     # -- Trainer Config --
     accelerator = "gpu",
     fast_dev_run = False,
@@ -34,6 +33,7 @@ config = SimpleNamespace(
 
 def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--scheduler", type=str, default=config.scheduler, help="Learning rate scheduler for the model to use.")
     parser.add_argument("--model_path", type=str, default=config.model_path, help="EfficientNet Model to train.")
     parser.add_argument("--data_dir", type=str, default=config.data_dir, help="Data directory path.")
     parser.add_argument('--fast_dev_run', action='store_true', help='Check PL modules are set up correctly.')
