@@ -29,15 +29,17 @@ Wandb Sweeps Docs: https://docs.wandb.ai/guides/sweeps
 Sweeps Lesson Files: https://github.com/wandb/edu/tree/main/mlops-001/lesson2
 
 Run a sweep on a specific GPU
+
+cd /home/bartley/gpu_test/Benetech
 ```
 # -------- Decoder Stuff ---------
 # Training scripts
-CUDA_VISIBLE_DEVICES=0 python main.py --seed=0 --epochs=2 --val_check_interval=0.26
-CUDA_VISIBLE_DEVICES=1 python main.py --seed=1 --epochs=2
-CUDA_VISIBLE_DEVICES=1 python main.py --epochs=1000 --overfit_batches=1 --lr=0.00003
-CUDA_VISIBLE_DEVICES=2 python main.py --epochs=10 --model_path
+CUDA_VISIBLE_DEVICES=0 python classifier_train.py --epochs=2 --val_check_interval=0.05 --chart_type="v"
+CUDA_VISIBLE_DEVICES=1 python classifier_train.py --epochs=2 --val_check_interval=0.05 --chart_type="h"
+CUDA_VISIBLE_DEVICES=2 python classifier_train.py --epochs=2 --val_check_interval=0.05 --chart_type="l"
+CUDA_VISIBLE_DEVICES=3 python classifier_train.py --epochs=2 --val_check_interval=0.05 --chart_type="s"
 
-CUDA_VISIBLE_DEVICES=1 python main.py --seed=1 --epochs=10
+CUDA_VISIBLE_DEVICES=0 python main.py --seed=1 --epochs=1 --no_wandb --fast_dev_run
 CUDA_VISIBLE_DEVICES=2 python main.py --seed=1 --epochs=10 --processor_path="google/pix2struct-base" --model_path="google/pix2struct-base"
 CUDA_VISIBLE_DEVICES=3 python main.py --seed=1 --epochs=5 --val_check_interval=0.26
 
@@ -47,8 +49,8 @@ CUDA_VISIBLE_DEVICES=1 python infer_image.py
 CUDA_VISIBLE_DEVICES=2 python infer_image.py
 
 # ---------- Classifier Stuff ----------
-CUDA_VISIBLE_DEVICES=1 python classifier_train.py --batch_size=128 --lr=0.00001 --val_check_interval=0.10
-CUDA_VISIBLE_DEVICES=2 python classifier_train.py --batch_size=128 --lr=0.0001 --val_check_interval=0.10
+CUDA_VISIBLE_DEVICES=1 python classifier_train.py --no_wandb --fast_dev_run --scheduler="CosineAnnealingLRDecay"
+CUDA_VISIBLE_DEVICES=0 python classifier_train.py --no_wandb --fast_dev_run
 
 # ---------- Sweeps ----------
 CUDA_VISIBLE_DEVICES=0 wandb agent brendanartley/Benetech-Classifier/82uw2f7z

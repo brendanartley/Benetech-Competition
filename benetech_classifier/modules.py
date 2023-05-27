@@ -1,4 +1,4 @@
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 import torchvision
 from torchvision import transforms
 import torch
@@ -8,23 +8,33 @@ import torchmetrics
 import torchinfo
 import torch.nn.functional as F
 
+from timm.scheduler.cosine_lr import CosineLRScheduler
+
 import pandas as pd
 from PIL import Image
 
 class BenetechClassifierDataset(torch.utils.data.Dataset):
-    def __init__(self, data_dir, train=True, transform=None):
+    def __init__(self, data_dir, train=True, transform=None, train_all=False):
         self.data_dir = data_dir
-        self.imgs, self.labels = self.load_df(train)
-
+        self.imgs, self.labels = self.load_df(train, train_all)
         self.transform = transform
 
-    def load_df(self, train):
+    def load_df(self, train, train_all):
         # Load data
         df = pd.read_csv(self.data_dir + "metadata.csv")
-        if train == True:
-            df = df[df.validation == False].reset_index(drop=True)
+
+        # CV option
+        if train_all == False:
+            if train == True:
+                df = df[df.validation == False].reset_index(drop=True)
+            else:
+                df = df[df.validation == True].reset_index(drop=True)
+        # Train on all data option
         else:
-            df = df[df.validation == True].reset_index(drop=True)
+            if train == True:
+                df = df.reset_index(drop=True)
+            else:
+                return None, None
 
         # Create img paths and one hot labels
         imgs = df.file_name
@@ -57,6 +67,7 @@ class BenetechClassifierDataModule(pl.LightningDataModule):
         num_workers: int,
         cache_dir: str,
         model_path: str,
+        train_all: bool,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -90,13 +101,16 @@ class BenetechClassifierDataModule(pl.LightningDataModule):
             self.val_dataset = self._dataset(train=False, transform=self.val_transform)
             
     def _dataset(self, train, transform):
-        return BenetechClassifierDataset(data_dir=self.hparams.data_dir, train=train, transform=transform)
+        return BenetechClassifierDataset(data_dir=self.hparams.data_dir, train=train, transform=transform, train_all=self.hparams.train_all)
     
     def train_dataloader(self):
         return self._dataloader(self.train_dataset, train=True)
     
     def val_dataloader(self):
-        return self._dataloader(self.val_dataset, train=False)
+        if self.hparams.train_all == False:
+            return self._dataloader(self.val_dataset, train=False)
+        else:
+            return []
 
     def _dataloader(self, dataset, train=False):
         return torch.utils.data.DataLoader(
@@ -110,7 +124,7 @@ class BenetechClassifierDataModule(pl.LightningDataModule):
 class BenetechClassifierModule(pl.LightningModule):
     def __init__(
         self,
-        learning_rate: float,
+        lr: float,
         cache_dir: str,
         model_save_dir: str,
         model_path: str,
@@ -145,29 +159,43 @@ class BenetechClassifierModule(pl.LightningModule):
         num_ftrs = model.classifier[1].in_features
         model.classifier[1] = nn.Linear(num_ftrs, self.hparams.num_classes) 
 
-        # Get dimensions of model
-        effnet_mappings = {"B0": 224, "B1": 240, "B2": 260, "B3": 300, "B4": 380}
-        dimensions = effnet_mappings[self.hparams.model_path]
+        # # Get dimensions of model
+        # effnet_mappings = {"B0": 224, "B1": 240, "B2": 260, "B3": 300, "B4": 380}
+        # dimensions = effnet_mappings[self.hparams.model_path]
 
         # Print model summary
-        torchinfo.summary(model, input_size=(64, 3, dimensions, dimensions))
+        # torchinfo.summary(model, input_size=(64, 3, dimensions, dimensions))
         return model
     
     def _init_optimizer(self):
         return optim.AdamW(
             self.parameters(), 
-            lr=self.hparams.learning_rate,
+            lr=self.hparams.lr,
             )
 
     def _init_scheduler(self, optimizer):
         if self.hparams.scheduler == "CosineAnnealingLR":
             return torch.optim.lr_scheduler.CosineAnnealingLR(
                 optimizer, 
-                T_max = self.hparams.epochs,
+                T_max = self.trainer.estimated_stepping_batches,
                 eta_min = 1e-8,
+                )
+        elif self.hparams.scheduler == "CosineAnnealingLRDecay":
+            return CosineLRScheduler(
+                optimizer, 
+                t_initial = self.trainer.estimated_stepping_batches, 
+                cycle_decay = 0.75, 
+                cycle_limit = 5, 
+                lr_min = 1e-8,
                 )
         else:
             raise ValueError(f"{self.hparams.scheduler} is not a valid scheduler.")
+        
+    def lr_scheduler_step(self, scheduler, optimizer_idx):
+        print(self.global_step)
+        scheduler.step(
+            epoch=self.global_step
+        )
     
     def _init_loss_fn(self):
         return nn.CrossEntropyLoss(
@@ -181,8 +209,8 @@ class BenetechClassifierModule(pl.LightningModule):
                 num_classes = self.hparams.num_classes,
             ),
         }
+        
         metric_collection = torchmetrics.MetricCollection(metrics)
-
         return torch.nn.ModuleDict(
             {
                 "train_metrics": metric_collection.clone(prefix="train_"),
@@ -197,7 +225,7 @@ class BenetechClassifierModule(pl.LightningModule):
             "optimizer": optimizer,
             "lr_scheduler": {
                 "scheduler": scheduler,
-                "interval": "epoch",
+                "interval": "step",
             },
         }
     

@@ -1,4 +1,4 @@
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 
 def load_logger_and_callbacks(
     fast_dev_run,
@@ -45,5 +45,7 @@ def get_logger(metrics, project):
     return logger, id_
 
 def get_callbacks():
-    callbacks = None
+    callbacks = [
+        pl.callbacks.LearningRateMonitor(),
+    ]
     return callbacks

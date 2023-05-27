@@ -1,4 +1,4 @@
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 from benetech_classifier.modules import BenetechClassifierModule, BenetechClassifierDataModule
 from benetech_classifier.helpers import load_logger_and_callbacks
 
@@ -16,6 +16,7 @@ def train(
         num_workers = config.num_workers,
         cache_dir = config.cache_dir,
         model_path = config.model_path,
+        train_all = config.train_all,
     )
 
     logger, callbacks = load_logger_and_callbacks(
@@ -32,7 +33,7 @@ def train(
     )
 
     module = BenetechClassifierModule(
-        learning_rate = config.lr,
+        lr = config.lr,
         model_save_dir = config.model_save_dir,
         model_path = config.model_path,
         run_name = logger._experiment.name if logger else None,

@@ -4,15 +4,14 @@ from types import SimpleNamespace
 
 # defaults
 config = SimpleNamespace(
-    data_dir = "/data/bartley/gpu_test/bartley-benetech-resized/",    
-    # data_dir = "/data/bartley/gpu_test/bartley-benetech-resized-2/",    
+    # data_dir = "/data/bartley/gpu_test/bartley-benetech-resized/",    
+    data_dir = "/data/bartley/gpu_test/500k_graphs/",   
     # data_dir = "/data/bartley/gpu_test/bartley-benetech-resized-small/",
     model_save_dir = "/data/bartley/gpu_test/models/",
     cache_dir = "/data/bartley/gpu_test/HF_CACHE",
-    # model_path = "google/pix2struct-base",
-    # processor_path = "google/pix2struct-base",
     model_path = "google/deplot",
     processor_path = "google/deplot",
+    chart_type = "v", # one of "vhlsd" (vertical_bar, horizontal_bar, line, scatter, dot)
     no_wandb = False,
     project = "Benetech-Decoder",
     save_model = True,
@@ -20,10 +19,11 @@ config = SimpleNamespace(
     max_length = 512,
     batch_size = 3,
     epochs = 1,
-    lr = 3e-5,
+    lr = 1e-5,
     verbose = 2,
     num_workers = 2,
     seed = 0,
+    scheduler = "CosineAnnealingLR",
     # -- Trainer Config --
     accelerator = "gpu",
     fast_dev_run = False,
@@ -37,10 +37,12 @@ config = SimpleNamespace(
 
 def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--chart_type", type=str, default=config.chart_type, help="The chart type to train on.")
     parser.add_argument("--data_dir", type=str, default=config.data_dir, help="Data directory path.")
     parser.add_argument("--model_path", type=str, default=config.model_path, help="Huggingface model path.")
     parser.add_argument("--processor_path", type=str, default=config.processor_path, help="Huggingface processor path.")
     parser.add_argument('--fast_dev_run', action='store_true', help='Check PL modules are set up correctly.')
+    parser.add_argument('--train_all', action='store_true', help='Indicator wether to train on all the data.')
     parser.add_argument("--overfit_batches", type=int, default=config.overfit_batches, help="Num of batches to overfit (sanity check).")
     parser.add_argument('--no_wandb', action='store_true', help='Wether to log with weights and biases.')
     parser.add_argument("--seed", type=int, default=config.seed, help="Seed for reproducability.")

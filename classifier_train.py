@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 # defaults
 config = SimpleNamespace(
-    data_dir = "/data/bartley/gpu_test/bartley-benetech-resized/",    
+    data_dir = "/data/bartley/gpu_test/500k_graphs/",    
     model_save_dir = "/data/bartley/gpu_test/models/",
     cache_dir = "/data/bartley/gpu_test/HF_CACHE",
     model_path = "B1", # EfficientNet - B1-B4 are implemented
@@ -14,18 +14,18 @@ config = SimpleNamespace(
     num_classes = 5,
     batch_size = 16,
     epochs = 1,
-    lr = 1e-4,
+    lr = 1e-3,
     label_smoothing = 0.10,
-    scheduler = "CosineAnnealingLR",
+    scheduler = "CosineAnnealingLRDecay",
     # -- Trainer Config --
     accelerator = "gpu",
     fast_dev_run = False,
     overfit_batches = 0,
     devices = 1,
     precision = 32,
-    log_every_n_steps = 10,
+    log_every_n_steps = 50,
     accumulate_grad_batches = 1,
-    val_check_interval = 0.1,
+    val_check_interval = 0.01,
     num_workers = 2,
     seed = 0,
     verbose = 2,
@@ -36,6 +36,7 @@ def parse_args():
     parser.add_argument("--scheduler", type=str, default=config.scheduler, help="Learning rate scheduler for the model to use.")
     parser.add_argument("--model_path", type=str, default=config.model_path, help="EfficientNet Model to train.")
     parser.add_argument("--data_dir", type=str, default=config.data_dir, help="Data directory path.")
+    parser.add_argument('--train_all', action='store_true', help='Indicator wether to train on all the data.')
     parser.add_argument('--fast_dev_run', action='store_true', help='Check PL modules are set up correctly.')
     parser.add_argument("--overfit_batches", type=int, default=config.overfit_batches, help="Num of batches to overfit (sanity check).")
     parser.add_argument('--no_wandb', action='store_true', help='Wether to log with weights and biases.')

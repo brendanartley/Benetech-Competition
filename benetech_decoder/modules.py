@@ -1,5 +1,5 @@
 import torch
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 import pandas as pd
 from PIL import Image
 
@@ -7,20 +7,67 @@ from datasets import load_dataset
 from transformers import AutoProcessor, Pix2StructForConditionalGeneration
 from benetech_decoder.metrics import BenetechMetric
 
+# class ImageCaptioningDataset(torch.utils.data.Dataset):
+#     def __init__(self, dataset, processor, max_patches):
+#         self.dataset = dataset
+#         self.processor = processor
+#         self.max_patches = max_patches
+
+#     def __len__(self):
+#         return len(self.dataset)
+
+#     def __getitem__(self, idx):
+#         item = self.dataset[idx]
+#         encoding = self.processor(images=item["image"], text="", return_tensors="pt", max_patches=self.max_patches)        
+#         encoding = {k:v.squeeze() for k,v in encoding.items()}
+#         encoding["text"] = item["text"]
+#         return encoding
+
 class ImageCaptioningDataset(torch.utils.data.Dataset):
-    def __init__(self, dataset, processor, max_patches):
-        self.dataset = dataset
+    def __init__(self, data_dir, processor, max_patches, train, train_all, chart_type):
+        self.data_dir = data_dir
         self.processor = processor
         self.max_patches = max_patches
+        self.imgs, self.labels = self.load_df(train, train_all, chart_type)
 
     def __len__(self):
-        return len(self.dataset)
+        return len(self.imgs)
+    
+    def load_df(self, train, train_all, chart_type):
+        # Load data
+        df = pd.read_csv(self.data_dir + "metadata.csv")
 
+        # Select chart_type
+        class_map = {'l': 'line', 'v': 'vertical_bar', 's': 'scatter', 'h': 'horizontal_bar', 'd': 'dot'}
+        df = df[df.chart_type == class_map[chart_type]]
+
+        # CV option
+        if train_all == False:
+            if train == True:
+                df = df[df.validation == False].reset_index(drop=True)
+            else:
+                df = df[df.validation == True].reset_index(drop=True)
+        # Train on all data option
+        else:
+            if train == True:
+                df = df.reset_index(drop=True)
+            else:
+                return None
+        
+        # Extract IMG path and texts
+        imgs = df["file_name"].values
+        labels = df["text"].values
+        return imgs, labels
+    
     def __getitem__(self, idx):
-        item = self.dataset[idx]
-        encoding = self.processor(images=item["image"], text="", return_tensors="pt", max_patches=self.max_patches)        
+        # Get IMG/text
+        image = Image.open(self.data_dir + self.imgs[idx])
+        label = self.labels[idx]
+
+        # Process input
+        encoding = self.processor(images=image, text="", return_tensors="pt", max_patches=self.max_patches)        
         encoding = {k:v.squeeze() for k,v in encoding.items()}
-        encoding["text"] = item["text"]
+        encoding["text"] = label
         return encoding
 
 class BenetechDataModule(pl.LightningDataModule):
@@ -32,6 +79,8 @@ class BenetechDataModule(pl.LightningDataModule):
         max_length: int,
         num_workers: int,
         max_patches: int,
+        train_all: bool,
+        chart_type: str,
         cache_dir: str,
     ):
         super().__init__()
@@ -53,19 +102,15 @@ class BenetechDataModule(pl.LightningDataModule):
             self.val_dataset = self._dataset(train=False)
             
     def _dataset(self, train):
-        if train == True:
-            return ImageCaptioningDataset(
-                dataset = load_dataset("imagefolder", data_dir=self.hparams.data_dir, split="train", cache_dir=self.hparams.cache_dir),
-                processor = self.processor,
-                max_patches = self.hparams.max_patches,
-            )
-        else:
-            return ImageCaptioningDataset(
-                dataset = load_dataset("imagefolder", data_dir=self.hparams.data_dir, split="validation", cache_dir=self.hparams.cache_dir),
-                processor = self.processor,
-                max_patches = self.hparams.max_patches,
-            )
-    
+        return ImageCaptioningDataset(
+            data_dir = self.hparams.data_dir,
+            processor = self.processor,
+            max_patches = self.hparams.max_patches,
+            train = train,
+            train_all = self.hparams.train_all,
+            chart_type = self.hparams.chart_type,
+        )
+
     def train_dataloader(self):
         return self._dataloader(self.train_dataset, train=True)
     
@@ -131,6 +176,7 @@ class BenetechModule(pl.LightningModule):
         model_save_dir: str,
         run_name: str,
         save_model: bool,
+        scheduler: str,
         processor: AutoProcessor,
     ):
         super().__init__()
@@ -157,6 +203,16 @@ class BenetechModule(pl.LightningModule):
             lr=self.hparams.learning_rate,
             )
     
+    def _init_scheduler(self, optimizer):
+        if self.hparams.scheduler == "CosineAnnealingLR":
+            return torch.optim.lr_scheduler.CosineAnnealingLR(
+                optimizer, 
+                T_max = self.trainer.estimated_stepping_batches,
+                eta_min = 1e-8,
+                )
+        else:
+            raise ValueError(f"{self.hparams.scheduler} is not a valid scheduler.")
+    
     def _init_metrics(self):
         metrics = {
             "benetech": BenetechMetric(),
@@ -165,8 +221,13 @@ class BenetechModule(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = self._init_optimizer()
+        scheduler = self._init_scheduler(optimizer)
         return {
             "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "interval": "step",
+            },
         }
     
     def validation_step(self, batch, batch_idx):
