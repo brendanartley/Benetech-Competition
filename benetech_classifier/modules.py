@@ -134,6 +134,7 @@ class BenetechClassifierModule(pl.LightningModule):
         label_smoothing: float,
         epochs: int,
         scheduler: str,
+        fast_dev_run: bool,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -181,18 +182,21 @@ class BenetechClassifierModule(pl.LightningModule):
                 eta_min = 1e-8,
                 )
         elif self.hparams.scheduler == "CosineAnnealingLRDecay":
+            if self.hparams.fast_dev_run == True:
+                num_cycles = 1
+            else:
+                num_cycles = 5
             return CosineLRScheduler(
                 optimizer, 
-                t_initial = self.trainer.estimated_stepping_batches, 
+                t_initial = self.trainer.estimated_stepping_batches // num_cycles, 
                 cycle_decay = 0.75, 
-                cycle_limit = 5, 
+                cycle_limit = num_cycles, 
                 lr_min = 1e-8,
                 )
         else:
             raise ValueError(f"{self.hparams.scheduler} is not a valid scheduler.")
         
     def lr_scheduler_step(self, scheduler, optimizer_idx):
-        print(self.global_step)
         scheduler.step(
             epoch=self.global_step
         )
@@ -251,3 +255,8 @@ class BenetechClassifierModule(pl.LightningModule):
     def _log(self, stage, loss, batch_size):
         self.log(f"{stage}_loss", loss, prog_bar=True, batch_size=batch_size)
         self.log_dict(self.metrics[f"{stage}_metrics"], prog_bar=True, batch_size=batch_size)
+
+    def on_train_end(self):
+        if self.hparams.save_model == True:
+            torch.save(self.model.state_dict(), "{}{}.pt".format(self.hparams.model_save_dir, self.hparams.run_name))
+        return

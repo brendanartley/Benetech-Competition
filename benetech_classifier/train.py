@@ -43,6 +43,7 @@ def train(
         label_smoothing = config.label_smoothing,
         epochs = config.epochs,
         scheduler = config.scheduler,
+        fast_dev_run = config.fast_dev_run,
     )
 
     # Trainer Args: https://lightning.ai/docs/pytorch/stable/common/trainer.html#benchmark
