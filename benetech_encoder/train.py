@@ -1,6 +1,6 @@
 import lightning.pytorch as pl
-from benetech_decoder.modules import BenetechDataModule, BenetechModule
-from benetech_decoder.helpers import load_logger_and_callbacks
+from benetech_encoder.modules import BenetechDataModule, BenetechModule
+from benetech_encoder.helpers import load_logger_and_callbacks
 
 def train(
         config,
@@ -31,7 +31,8 @@ def train(
     )
 
     module = BenetechModule(
-        learning_rate = config.lr,
+        lr = config.lr,
+        lr_min = config.lr_min,
         max_length = config.max_length,
         model_path = config.model_path,
         model_save_dir = config.model_save_dir,
@@ -40,6 +41,7 @@ def train(
         save_model = config.save_model,
         cache_dir = config.cache_dir,
         scheduler = config.scheduler,
+        chart_type = config.chart_type,
     )
 
     # Trainer Args: https://lightning.ai/docs/pytorch/stable/common/trainer.html#benchmark

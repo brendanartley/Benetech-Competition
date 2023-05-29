@@ -5,7 +5,7 @@ from PIL import Image
 
 from datasets import load_dataset
 from transformers import AutoProcessor, Pix2StructForConditionalGeneration
-from benetech_decoder.metrics import BenetechMetric
+from benetech_encoder.metrics import BenetechMetric
 
 # class ImageCaptioningDataset(torch.utils.data.Dataset):
 #     def __init__(self, dataset, processor, max_patches):
@@ -169,7 +169,7 @@ class BenetechDataModule(pl.LightningDataModule):
 class BenetechModule(pl.LightningModule):
     def __init__(
         self,
-        learning_rate: float,
+        lr: float,
         max_length: int,
         cache_dir: str,
         model_path: str,
@@ -178,6 +178,8 @@ class BenetechModule(pl.LightningModule):
         save_model: bool,
         scheduler: str,
         processor: AutoProcessor,
+        lr_min: float,
+        chart_type: str,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -200,7 +202,7 @@ class BenetechModule(pl.LightningModule):
     def _init_optimizer(self):
         return torch.optim.AdamW(
             self.model.parameters(), 
-            lr=self.hparams.learning_rate,
+            lr=self.hparams.lr,
             )
     
     def _init_scheduler(self, optimizer):
@@ -208,7 +210,7 @@ class BenetechModule(pl.LightningModule):
             return torch.optim.lr_scheduler.CosineAnnealingLR(
                 optimizer, 
                 T_max = self.trainer.estimated_stepping_batches,
-                eta_min = 1e-8,
+                eta_min = self.hparams.lr_min,
                 )
         else:
             raise ValueError(f"{self.hparams.scheduler} is not a valid scheduler.")
@@ -286,5 +288,5 @@ class BenetechModule(pl.LightningModule):
 
     def on_train_end(self):
         if self.hparams.save_model == True:
-            self.model.save_pretrained('{}{}.pt'.format(self.hparams.model_save_dir, self.hparams.run_name))
+            self.model.save_pretrained('{}{}_{}.pt'.format(self.hparams.model_save_dir, self.hparams.run_name, self.hparams.chart_type))
         return

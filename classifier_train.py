@@ -5,7 +5,7 @@ from types import SimpleNamespace
 # defaults
 config = SimpleNamespace(
     data_dir = "/data/bartley/gpu_test/500k_graphs/",    
-    model_save_dir = "/data/bartley/gpu_test/models/",
+    model_save_dir = "/data/bartley/gpu_test/models/classifiers/",
     cache_dir = "/data/bartley/gpu_test/HF_CACHE",
     model_path = "B1", # EfficientNet - B1-B4 are implemented
     no_wandb = True,
@@ -15,6 +15,7 @@ config = SimpleNamespace(
     batch_size = 16,
     epochs = 1,
     lr = 1e-3,
+    lr_min = 1e-8,
     label_smoothing = 0.10,
     scheduler = "CosineAnnealingLRDecay",
     # -- Trainer Config --

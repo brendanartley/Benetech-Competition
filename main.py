@@ -1,4 +1,4 @@
-from benetech_decoder.train import train
+from benetech_encoder.train import train
 import argparse
 from types import SimpleNamespace
 
@@ -7,7 +7,7 @@ config = SimpleNamespace(
     # data_dir = "/data/bartley/gpu_test/bartley-benetech-resized/",    
     data_dir = "/data/bartley/gpu_test/500k_graphs/",   
     # data_dir = "/data/bartley/gpu_test/bartley-benetech-resized-small/",
-    model_save_dir = "/data/bartley/gpu_test/models/",
+    model_save_dir = "/data/bartley/gpu_test/models/encoders/",
     cache_dir = "/data/bartley/gpu_test/HF_CACHE",
     model_path = "google/deplot",
     processor_path = "google/deplot",
@@ -20,6 +20,7 @@ config = SimpleNamespace(
     batch_size = 3,
     epochs = 1,
     lr = 1e-5,
+    lr_min = 1e-8,
     verbose = 2,
     num_workers = 2,
     seed = 0,

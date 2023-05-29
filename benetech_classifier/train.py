@@ -34,6 +34,7 @@ def train(
 
     module = BenetechClassifierModule(
         lr = config.lr,
+        lr_min = config.lr_min,
         model_save_dir = config.model_save_dir,
         model_path = config.model_path,
         run_name = logger._experiment.name if logger else None,
