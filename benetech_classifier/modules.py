@@ -81,19 +81,14 @@ class BenetechClassifierDataModule(pl.LightningDataModule):
         dimensions = effnet_mappings[self.hparams.model_path]
 
         # Set Transforms
-        train_transform = transforms.Compose([
+        img_transforms = transforms.Compose([
+            transforms.Resize(380),
             transforms.CenterCrop(dimensions),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], 
                         std=[0.229, 0.224, 0.225]),
         ])
-        val_transform = transforms.Compose([
-            transforms.CenterCrop(dimensions),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], 
-                        std=[0.229, 0.224, 0.225]),
-        ])
-        return train_transform, val_transform
+        return img_transforms, img_transforms
     
     def setup(self, stage):        
         if stage == "fit":
