@@ -16,6 +16,7 @@ config = SimpleNamespace(
     epochs = 1,
     lr = 1e-3,
     lr_min = 1e-8,
+    num_cycles = 5,
     label_smoothing = 0.10,
     scheduler = "CosineAnnealingLRDecay",
     # -- Trainer Config --
@@ -45,7 +46,9 @@ def parse_args():
     parser.add_argument("--batch_size", type=int, default=config.batch_size, help="Num data points per batch.")
     parser.add_argument("--accumulate_grad_batches", type=int, default=config.accumulate_grad_batches, help="Number of steps before each optimizer step.")
     parser.add_argument("--epochs", type=int, default=config.epochs, help="Number of epochs to train.")
-    parser.add_argument("--lr", type=float, default=config.lr, help="Learning rate for the model.")
+    parser.add_argument("--lr", type=float, default=config.lr, help="Starting learning rate for the model.")
+    parser.add_argument("--lr_min", type=float, default=config.lr_min, help="Lowest allowed learning rate for the model.")
+    parser.add_argument("--num_cycles", type=int, default=config.num_cycles, help="Number of cycles for the cyclical cosine annealing LR.")
     parser.add_argument("--label_smoothing", type=float, default=config.label_smoothing, help="Label smoothing factor for loss function.")
     parser.add_argument("--val_check_interval", type=float, default=config.val_check_interval, help="Number of batches between validation checks.")
     args = parser.parse_args()

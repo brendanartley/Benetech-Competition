@@ -15,12 +15,6 @@ metric:
 # Parameters space to search
 parameters:
   label_smoothing: 
-    values: [0.1, 0.2, 0.3, 0.4]
+    values: [0.15, 0.2, 0.25, 0.3, 0.35]
   model_path:
-    values: ["B0", "B1", "B2", "B3", "B4"]
-  batch_size:
-    values: [16, 32]
-  lr:
-    values: [1e-4, 1e-5]
-  epochs:
-    value: 5
+    values: ["B1", "B2"]

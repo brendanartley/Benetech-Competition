@@ -7,22 +7,6 @@ from datasets import load_dataset
 from transformers import AutoProcessor, Pix2StructForConditionalGeneration
 from benetech_encoder.metrics import BenetechMetric
 
-# class ImageCaptioningDataset(torch.utils.data.Dataset):
-#     def __init__(self, dataset, processor, max_patches):
-#         self.dataset = dataset
-#         self.processor = processor
-#         self.max_patches = max_patches
-
-#     def __len__(self):
-#         return len(self.dataset)
-
-#     def __getitem__(self, idx):
-#         item = self.dataset[idx]
-#         encoding = self.processor(images=item["image"], text="", return_tensors="pt", max_patches=self.max_patches)        
-#         encoding = {k:v.squeeze() for k,v in encoding.items()}
-#         encoding["text"] = item["text"]
-#         return encoding
-
 class ImageCaptioningDataset(torch.utils.data.Dataset):
     def __init__(self, data_dir, processor, max_patches, train, train_all, chart_type):
         self.data_dir = data_dir

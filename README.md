@@ -51,11 +51,11 @@ CUDA_VISIBLE_DEVICES=2 python infer_image.py
 # ---------- Classifier Stuff ----------
 CUDA_VISIBLE_DEVICES=0 python classifier_train.py --no_wandb --fast_dev_run
 CUDA_VISIBLE_DEVICES=1 python classifier_train.py --fast_dev_run
-CUDA_VISIBLE_DEVICES=2 python classifier_train.py
+CUDA_VISIBLE_DEVICES=2 python classifier_train.py --lr=1e-4 --lr_min=1e-8 --num_cycles=4 --fast_dev_run
 
 # ---------- Sweeps ----------
-CUDA_VISIBLE_DEVICES=0 wandb agent brendanartley/Benetech-Classifier/82uw2f7z
-CUDA_VISIBLE_DEVICES=1 wandb agent brendanartley/Benetech-Classifier/82uw2f7z
-CUDA_VISIBLE_DEVICES=2 wandb agent brendanartley/Benetech-Classifier/82uw2f7z
-CUDA_VISIBLE_DEVICES=3 wandb agent brendanartley/Benetech-Classifier/82uw2f7z
+CUDA_VISIBLE_DEVICES=0 wandb agent brendanartley/Benetech-Classifier/zjusg3eo
+CUDA_VISIBLE_DEVICES=1 wandb agent brendanartley/Benetech-Classifier/zjusg3eo
+CUDA_VISIBLE_DEVICES=2 wandb agent brendanartley/Benetech-Classifier/zjusg3eo
+CUDA_VISIBLE_DEVICES=3 wandb agent brendanartley/Benetech-Classifier/zjusg3eo
 ```

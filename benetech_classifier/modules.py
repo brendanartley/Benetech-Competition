@@ -131,6 +131,7 @@ class BenetechClassifierModule(pl.LightningModule):
         scheduler: str,
         fast_dev_run: bool,
         lr_min: float,
+        num_cycles: int,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -181,7 +182,8 @@ class BenetechClassifierModule(pl.LightningModule):
             if self.hparams.fast_dev_run == True:
                 num_cycles = 1
             else:
-                num_cycles = 5
+                num_cycles = self.hparams.num_cycles
+
             return CosineLRScheduler(
                 optimizer, 
                 t_initial = self.trainer.estimated_stepping_batches // num_cycles, 

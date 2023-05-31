@@ -45,6 +45,7 @@ def train(
         epochs = config.epochs,
         scheduler = config.scheduler,
         fast_dev_run = config.fast_dev_run,
+        num_cycles = config.num_cycles,
     )
 
     # Trainer Args: https://lightning.ai/docs/pytorch/stable/common/trainer.html#benchmark
