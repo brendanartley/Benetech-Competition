@@ -1,45 +1,102 @@
 from torchmetrics import Metric
 import torch
 
-import re
+import re, math
 import numpy as np
 from rapidfuzz.distance.Levenshtein import distance as levenshtein
 from sklearn.metrics import r2_score
 
+from torchmetrics import Metric
+
 class BenetechMetric(Metric):
-    def __init__(self):
+    def __init__(self, chart_type):
         super().__init__()
         self.add_state("score", default=torch.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("total", default=torch.tensor(0.0), dist_reduce_fx="sum")
+        self.chart_type = chart_type
 
-    def update(self, trues: str, preds: str):
+    def update(self, trues: list, preds: list, testing: bool = False, testing_xs: bool = False):
         scores = []
         for gt_series, pred_series in zip(trues, preds):
-            
-            gt_processed = self.process_prediction(gt_series)
-            pred_processed = self.process_prediction(pred_series)
-            
-            for gt_arr, pred_arr in zip(gt_processed, pred_processed):
+            if testing == False:
+                gt_processed = self.process_prediction(gt_series)
+                pred_processed = self.process_prediction(pred_series)
+            else:
+                gt_processed = [gt_series.split(";")]
+                pred_processed = [pred_series.split(";")]
+
+            for i, (true_arr, pred_arr) in enumerate(zip(gt_processed, pred_processed)):
+                
+                if testing == False:
+                    is_x_values = i%2==0
+                else:
+                    is_x_values = testing_xs
                 
                 # Sanity Check: Make sure true labels can be parsed
-                assert gt_arr != None
+                assert true_arr != None
 
                 # If string conversion failed return 0
                 if pred_arr == None:
                     scores.append(0)
+                    continue
 
-                # If GT is string, convert predicted series to strings
-                if isinstance(gt_arr[0], str):
-                    pred_arr = [str(x) for x in pred_arr]
-
-                # Return 0 if pred_series is str and ground truth is not
-                if isinstance(gt_arr[0], str) == False and isinstance(pred_arr[0], str) == True:
-                    scores.append(0)
+                # Graph conventions
+                if self.chart_type == "v":
+                    if is_x_values == False:
+                        if self.check_float_conversion(pred_arr) == False:
+                            scores.append(0.0)
+                            continue
+                        else:
+                            pred_arr = [float(val) for val in pred_arr]
+                            true_arr = [float(val) for val in true_arr]
                     
-                # Score with RMSE or Levenshtein as appropriate
+                elif self.chart_type == "h":
+                    if is_x_values == True:
+                        if self.check_float_conversion(pred_arr) == False:
+                            scores.append(0.0)
+                            continue
+                        else:
+                            pred_arr = [float(val) for val in pred_arr]
+                            true_arr = [float(val) for val in true_arr]
+                    
+                
+                elif self.chart_type == "s":
+                    if is_x_values in [True, False]:
+                        if self.check_float_conversion(pred_arr) == False:
+                            scores.append(0.0)
+                            continue
+                        else:
+                            pred_arr = [float(val) for val in pred_arr]
+                            true_arr = [float(val) for val in true_arr]
+                    
+                elif self.chart_type == "l":
+                    if is_x_values == False:
+                        if self.check_float_conversion(pred_arr) == False:
+                            scores.append(0.0)
+                            continue
+                        else:
+                            pred_arr = [float(val) for val in pred_arr]
+                            true_arr = [float(val) for val in true_arr]
+                    
+                elif self.chart_type == "d":
+                    if is_x_values == False:
+                        if self.check_float_conversion(pred_arr) == False:
+                            scores.append(0.0)
+                            continue
+                        else:
+                            pred_arr = [float(val) for val in pred_arr]
+                            true_arr = [float(val) for val in true_arr]
                 else:
-                    scores.append(self.score_series(gt_arr, pred_arr))
-                    
+                    raise ValueError(f"{self.chart_type} not a recognized chart type.")
+
+                if len(true_arr) != len(pred_arr):
+                    score = 0.0
+                elif isinstance(true_arr[0], str):
+                    score = self.normalized_levenshtein_score(true_arr, pred_arr)
+                else:
+                    score = self.normalized_rmse(true_arr, pred_arr)
+                scores.append(score)
+
         self.score += torch.sum(torch.tensor(scores, dtype=torch.double), dtype=torch.double)
         self.total += torch.tensor(len(scores), dtype=torch.double)
 
@@ -68,39 +125,46 @@ class BenetechMetric(Metric):
             return self.normalized_rmse(y_true, y_pred)
     
     def process_prediction(self, string):
-        try:
-            tmp = tmp = [x.strip().split(" ") for x in re.sub(r"<0x0A>$", "", string.strip()).split("<0x0A>")]
-            xs = [x[0] for x in tmp]
-            ys = [x[-1] for x in tmp]
-
-            xs = self.convert_arr(xs)
-            ys = self.convert_arr(ys)
-            return [xs, ys]
-        except:
-            return [None, None]
+        # Split text
+        tmp = [x.strip().split(" ") for x in re.sub(r"<0x0A>$", "", string.strip()).split("<0x0A>")]
         
+        # When there is only 1 val is used twice. ex "<0x0A> 1 | <0x0a>"
+        xs = [x[0] for x in tmp]
+        ys = [x[-1] for x in tmp]
+        
+        # xs = self.convert_arr(xs)
+        # ys = self.convert_arr(ys)
+        return [xs, ys]
+        
+    def check_float_conversion(self, arr):
+        try:
+            for element in arr:
+                float(element)
+        except ValueError:
+            return False
+        return True
+            
     def convert_arr(self, arr):
         """
         Helper to get the type of series.
 
         strings: 2
         floats: 1
-        ints: 0
+        ints: 0s
         """
-        floats = False
-        ints = True
+        if self.check_float_conversion(arr):
+            arr = [float(x) for x in arr]
+            return self.replace_nan(arr)
+        elif self.check_float_conversion(arr[1:]):
+            arr = [float(arr[1])] + [float(x) for x in arr[1:]]
+            return self.replace_nan(arr)
+        return arr
 
-        # iterate values in arr (break if string)
-        # TODO: IMPROVE THE WAY I preprocess HERE (look at results of predictions to determine)
-        for val in arr:
-            if not re.search('^[0-9.-]*$', val) or len(val) == 0 or \
-                  (val.count('.') > 1 or val[-1] == '.' or val[0] == '.') or \
-                  (val.count('-') == 1 and val[0] != "-") or (val.count('-') >= 2) or (len(val) == 1 and val[0] not in "123456789"):
-                return arr
-            elif floats == False and '.' in val:
-                floats = True
-
-        if floats == True:
-            return [float(x) for x in arr]
-        else:
-            return [int(x) for x in arr]
+    def replace_nan(self, arr):
+        res = []
+        for num in arr:
+            if math.isnan(num) or math.isinf(num):
+                res.append(0.0)
+            else:
+                res.append(num)
+        return res

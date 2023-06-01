@@ -12,18 +12,19 @@ class ImageCaptioningDataset(torch.utils.data.Dataset):
         self.data_dir = data_dir
         self.processor = processor
         self.max_patches = max_patches
-        self.imgs, self.labels = self.load_df(train, train_all, chart_type)
+        self.chart_type = chart_type
+        self.imgs, self.labels = self.load_df(train, train_all)
 
     def __len__(self):
         return len(self.imgs)
     
-    def load_df(self, train, train_all, chart_type):
+    def load_df(self, train, train_all):
         # Load data
         df = pd.read_csv(self.data_dir + "metadata.csv")
 
         # Select chart_type
         class_map = {'l': 'line', 'v': 'vertical_bar', 's': 'scatter', 'h': 'horizontal_bar', 'd': 'dot'}
-        df = df[df.chart_type == class_map[chart_type]]
+        df = df[df.chart_type == class_map[self.chart_type]]
 
         # CV option
         if train_all == False:
@@ -123,13 +124,6 @@ class BenetechDataModule(pl.LightningDataModule):
         new_batch = {"flattened_patches":[], "attention_mask":[]}
         texts = [item["text"] for item in batch]
 
-        # text_inputs = self.processor(
-        #     text = texts, 
-        #     return_tensors = "pt", 
-        #     add_special_tokens = True,
-        #     max_length = self.hparams.max_length,
-        #     )
-
         text_inputs = self.processor(
             text = texts, 
             return_tensors = "pt", 
@@ -201,7 +195,7 @@ class BenetechModule(pl.LightningModule):
     
     def _init_metrics(self):
         metrics = {
-            "benetech": BenetechMetric(),
+            "benetech": BenetechMetric(chart_type = self.hparams.chart_type),
         }
         return metrics
 
