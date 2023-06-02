@@ -33,8 +33,17 @@ class BenetechClassifierDataset(torch.utils.data.Dataset):
         else:
             if train == True:
                 df = df.reset_index(drop=True)
+                # Repeat validation indices 5 times (as these are extracted - not generated)
+                df = pd.concat([
+                    df,
+                    df[df.validation == True],
+                    df[df.validation == True],
+                    df[df.validation == True],
+                    df[df.validation == True],
+                ], ignore_index=True)
+
             else:
-                return None, None
+                return [], []
 
         # Create img paths and one hot labels
         imgs = df.file_name
@@ -68,6 +77,8 @@ class BenetechClassifierDataModule(pl.LightningDataModule):
         cache_dir: str,
         model_path: str,
         train_all: bool,
+        transform_type: str,
+        resize_shape: int,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -81,13 +92,25 @@ class BenetechClassifierDataModule(pl.LightningDataModule):
         dimensions = effnet_mappings[self.hparams.model_path]
 
         # Set Transforms
-        img_transforms = transforms.Compose([
-            transforms.Resize(380),
-            transforms.CenterCrop(dimensions),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], 
-                        std=[0.229, 0.224, 0.225]),
-        ])
+        if self.hparams.transform_type == "center":
+            img_transforms = transforms.Compose([
+                transforms.Resize(self.hparams.resize_shape),
+                transforms.CenterCrop(dimensions),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], 
+                            std=[0.229, 0.224, 0.225]),
+            ])
+        elif self.hparams.transform_type == "top_right":
+            # Set Transforms
+            img_transforms = transforms.Compose([
+                transforms.Resize(self.hparams.resize_shape),
+                transforms.Lambda(lambda img: img.crop((img.size[0] - dimensions, 0, img.size[0], dimensions))),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], 
+                                    std=[0.229, 0.224, 0.225]),
+            ])
+        else:
+            raise ValueError(f"{self.hparams.transform_type} is not a valid transformation type.")
         return img_transforms, img_transforms
     
     def setup(self, stage):        

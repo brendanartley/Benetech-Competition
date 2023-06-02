@@ -32,12 +32,22 @@ class ImageCaptioningDataset(torch.utils.data.Dataset):
                 df = df[df.validation == False].reset_index(drop=True)
             else:
                 df = df[df.validation == True].reset_index(drop=True)
+
         # Train on all data option
         else:
             if train == True:
                 df = df.reset_index(drop=True)
+                # Repeat validation indices 5 times (as these are extracted - not generated)
+                df = pd.concat([
+                    df,
+                    df[df.validation == True],
+                    df[df.validation == True],
+                    df[df.validation == True],
+                    df[df.validation == True],
+                ], ignore_index=True)
+
             else:
-                return None
+                return [], []
         
         # Extract IMG path and texts
         imgs = df["file_name"].values

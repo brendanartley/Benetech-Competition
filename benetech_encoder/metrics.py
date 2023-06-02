@@ -138,9 +138,6 @@ class BenetechMetric(Metric):
         # When there is only 1 val is used twice. ex "<0x0A> 1 | <0x0a>"
         xs = [x[0] for x in tmp]
         ys = [x[-1] for x in tmp]
-        
-        # xs = self.convert_arr(xs)
-        # ys = self.convert_arr(ys)
         return [xs, ys]
         
     def check_float_conversion(self, arr):
@@ -150,22 +147,6 @@ class BenetechMetric(Metric):
         except ValueError:
             return False
         return True
-            
-    def convert_arr(self, arr):
-        """
-        Helper to get the type of series.
-
-        strings: 2
-        floats: 1
-        ints: 0s
-        """
-        if self.check_float_conversion(arr):
-            arr = [float(x) for x in arr]
-            return self.replace_nan(arr)
-        elif self.check_float_conversion(arr[1:]):
-            arr = [float(arr[1])] + [float(x) for x in arr[1:]]
-            return self.replace_nan(arr)
-        return arr
 
     def replace_nan(self, arr):
         res = []

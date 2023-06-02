@@ -17,6 +17,8 @@ def train(
         cache_dir = config.cache_dir,
         model_path = config.model_path,
         train_all = config.train_all,
+        transform_type = config.transform_type,
+        resize_shape = config.resize_shape,
     )
 
     logger, callbacks = load_logger_and_callbacks(

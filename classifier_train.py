@@ -19,6 +19,8 @@ config = SimpleNamespace(
     num_cycles = 5,
     label_smoothing = 0.10,
     scheduler = "CosineAnnealingLRDecay",
+    transform_type = "center", # center or top_right
+    resize_shape = 380,
     # -- Trainer Config --
     accelerator = "gpu",
     fast_dev_run = False,
@@ -35,6 +37,8 @@ config = SimpleNamespace(
 
 def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--resize_shape", type=int, default=config.resize_shape, help="Shape to resize images before crop.")
+    parser.add_argument("--transform_type", type=str, default=config.transform_type, help="Transformation type to try.")
     parser.add_argument("--scheduler", type=str, default=config.scheduler, help="Learning rate scheduler for the model to use.")
     parser.add_argument("--model_path", type=str, default=config.model_path, help="EfficientNet Model to train.")
     parser.add_argument("--data_dir", type=str, default=config.data_dir, help="Data directory path.")
