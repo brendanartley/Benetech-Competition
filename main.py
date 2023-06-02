@@ -33,7 +33,7 @@ config = SimpleNamespace(
     precision = 32,
     log_every_n_steps = 100,
     accumulate_grad_batches = 1,
-    val_check_interval = None,
+    val_check_interval = 0.10,
 )
 
 def parse_args():

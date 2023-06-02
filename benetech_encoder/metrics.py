@@ -94,7 +94,14 @@ class BenetechMetric(Metric):
                 elif isinstance(true_arr[0], str):
                     score = self.normalized_levenshtein_score(true_arr, pred_arr)
                 else:
-                    score = self.normalized_rmse(true_arr, pred_arr)
+                    # Sanity check: This fails in some places
+                    true_arr = self.replace_nan(true_arr)
+                    pred_arr = self.replace_nan(pred_arr)
+
+                    try:
+                        score = self.normalized_rmse(true_arr, pred_arr)
+                    except:
+                        score = 0.0
                 scores.append(score)
 
         self.score += torch.sum(torch.tensor(scores, dtype=torch.double), dtype=torch.double)
