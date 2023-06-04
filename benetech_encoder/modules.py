@@ -8,17 +8,18 @@ from transformers import AutoProcessor, Pix2StructForConditionalGeneration
 from benetech_encoder.metrics import BenetechMetric
 
 class ImageCaptioningDataset(torch.utils.data.Dataset):
-    def __init__(self, data_dir, processor, max_patches, train, train_all, chart_type):
+    def __init__(self, data_dir, val_repeat_n, processor, max_patches, validation_set, train_all, chart_type, axis):
         self.data_dir = data_dir
+        self.val_repeat_n = val_repeat_n
         self.processor = processor
         self.max_patches = max_patches
         self.chart_type = chart_type
-        self.imgs, self.labels = self.load_df(train, train_all)
+        self.imgs, self.labels = self.load_df(validation_set, train_all, axis)
 
     def __len__(self):
         return len(self.imgs)
     
-    def load_df(self, train, train_all):
+    def load_df(self, validation_set, train_all, axis):
         # Load data
         df = pd.read_csv(self.data_dir + "metadata.csv")
 
@@ -26,32 +27,33 @@ class ImageCaptioningDataset(torch.utils.data.Dataset):
         class_map = {'l': 'line', 'v': 'vertical_bar', 's': 'scatter', 'h': 'horizontal_bar', 'd': 'dot'}
         df = df[df.chart_type == class_map[self.chart_type]]
 
-        # CV option
+        # Cross-Validation option
         if train_all == False:
-            if train == True:
-                df = df[df.validation == False].reset_index(drop=True)
-            else:
+            if validation_set == True:
                 df = df[df.validation == True].reset_index(drop=True)
-
+            else:
+                df = df[df.validation == False].reset_index(drop=True)
+        
         # Train on all data option
         else:
-            if train == True:
-                df = df.reset_index(drop=True)
-                # Repeat validation indices 5 times (as these are extracted - not generated)
-                df = pd.concat([
-                    df,
-                    df[df.validation == True],
-                    df[df.validation == True],
-                    df[df.validation == True],
-                    df[df.validation == True],
-                ], ignore_index=True)
-
+            if validation_set == False:
+                # Repeat validation indices N times (as these are extracted - not generated)
+                df = pd.concat([df] + [df[df.validation == True] for _ in range(self.val_repeat_n)], ignore_index=True)
             else:
                 return [], []
         
         # Extract IMG path and texts
         imgs = df["file_name"].values
-        labels = df["text"].values
+
+        # Select x or y labels
+        if axis == "x":
+            idx = 0
+        elif axis == "y":
+            idx = 1
+        else:
+            raise ValueError(f"{axis} is not a recognized axis")
+        labels = df["text"].apply(lambda value: " <0x0A> ".join([y[idx].strip() for y in [x.split("|") for x in value.split("<0x0A>")]]))
+
         return imgs, labels
     
     def __getitem__(self, idx):
@@ -77,6 +79,8 @@ class BenetechDataModule(pl.LightningDataModule):
         train_all: bool,
         chart_type: str,
         cache_dir: str,
+        axis: str,
+        val_repeat_n: int,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -90,20 +94,22 @@ class BenetechDataModule(pl.LightningDataModule):
     
     def setup(self, stage):        
         if stage == "fit":
-            self.train_dataset = self._dataset(train=True)
-            self.val_dataset = self._dataset(train=False)
+            self.train_dataset = self._dataset(validation_set=False)
+            self.val_dataset = self._dataset(validation_set=True)
 
         if stage == "test":
-            self.val_dataset = self._dataset(train=False)
+            self.val_dataset = self._dataset(validation_set=True)
             
-    def _dataset(self, train):
+    def _dataset(self, validation_set):
         return ImageCaptioningDataset(
             data_dir = self.hparams.data_dir,
+            val_repeat_n = self.hparams.val_repeat_n,
             processor = self.processor,
             max_patches = self.hparams.max_patches,
-            train = train,
+            validation_set = validation_set,
             train_all = self.hparams.train_all,
             chart_type = self.hparams.chart_type,
+            axis = self.hparams.axis,
         )
 
     def train_dataloader(self):
@@ -168,6 +174,7 @@ class BenetechModule(pl.LightningModule):
         processor: AutoProcessor,
         lr_min: float,
         chart_type: str,
+        axis: str,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -205,7 +212,7 @@ class BenetechModule(pl.LightningModule):
     
     def _init_metrics(self):
         metrics = {
-            "benetech": BenetechMetric(chart_type = self.hparams.chart_type),
+            "benetech": BenetechMetric(chart_type = self.hparams.chart_type, axis = self.hparams.axis),
         }
         return metrics
 
@@ -276,5 +283,5 @@ class BenetechModule(pl.LightningModule):
 
     def on_train_end(self):
         if self.hparams.save_model == True:
-            self.model.save_pretrained('{}{}_{}.pt'.format(self.hparams.model_save_dir, self.hparams.run_name, self.hparams.chart_type))
+            self.model.save_pretrained('{}{}_{}_{}.pt'.format(self.hparams.model_save_dir, self.hparams.run_name, self.hparams.chart_type, self.hparams.axis))
         return

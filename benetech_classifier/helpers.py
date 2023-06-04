@@ -39,6 +39,7 @@ def get_logger(metrics, project):
         )
     id_ = logger.experiment.id
     
+    # Wandb metric summary options (min,max,mean,best,last,none): https://docs.wandb.ai/ref/python/run#define_metric
     for metric, summary in metrics.items():
         logger.experiment.define_metric(metric, summary=summary)
     

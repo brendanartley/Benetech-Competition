@@ -9,29 +9,33 @@ from sklearn.metrics import r2_score
 from torchmetrics import Metric
 
 class BenetechMetric(Metric):
-    def __init__(self, chart_type):
+    def __init__(self, chart_type, axis):
         super().__init__()
         self.add_state("score", default=torch.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("total", default=torch.tensor(0.0), dist_reduce_fx="sum")
         self.chart_type = chart_type
+        self.is_x_values = self.check_axis(axis)
 
-    def update(self, trues: list, preds: list, testing: bool = False, testing_xs: bool = False):
+    def check_axis(self, axis):
+        if axis == "x":
+            return True
+        elif axis == "y":
+            return False
+        else:
+            raise ValueError(f"{axis} is not a recognized axis")
+
+    def update(self, trues: list, preds: list, testing: bool = False):
         scores = []
         for gt_series, pred_series in zip(trues, preds):
-            if testing == False:
-                gt_processed = self.process_prediction(gt_series)
-                pred_processed = self.process_prediction(pred_series)
-            else:
+            if testing == True:
                 gt_processed = [gt_series.split(";")]
                 pred_processed = [pred_series.split(";")]
+            else:
+                gt_processed = self.process_prediction(gt_series)
+                pred_processed = self.process_prediction(pred_series)                
 
             for i, (true_arr, pred_arr) in enumerate(zip(gt_processed, pred_processed)):
-                
-                if testing == False:
-                    is_x_values = i%2==0
-                else:
-                    is_x_values = testing_xs
-                
+
                 # Sanity Check: Make sure true labels can be parsed
                 assert true_arr != None
 
@@ -42,7 +46,7 @@ class BenetechMetric(Metric):
 
                 # Graph conventions
                 if self.chart_type == "v":
-                    if is_x_values == False:
+                    if self.is_x_values == False:
                         if self.check_float_conversion(pred_arr) == False:
                             scores.append(0.0)
                             continue
@@ -51,7 +55,7 @@ class BenetechMetric(Metric):
                             true_arr = [float(val) for val in true_arr]
                     
                 elif self.chart_type == "h":
-                    if is_x_values == True:
+                    if self.is_x_values == True:
                         if self.check_float_conversion(pred_arr) == False:
                             scores.append(0.0)
                             continue
@@ -61,7 +65,7 @@ class BenetechMetric(Metric):
                     
                 
                 elif self.chart_type == "s":
-                    if is_x_values in [True, False]:
+                    if self.is_x_values in [True, False]:
                         if self.check_float_conversion(pred_arr) == False:
                             scores.append(0.0)
                             continue
@@ -70,7 +74,7 @@ class BenetechMetric(Metric):
                             true_arr = [float(val) for val in true_arr]
                     
                 elif self.chart_type == "l":
-                    if is_x_values == False:
+                    if self.is_x_values == False:
                         if self.check_float_conversion(pred_arr) == False:
                             scores.append(0.0)
                             continue
@@ -79,7 +83,7 @@ class BenetechMetric(Metric):
                             true_arr = [float(val) for val in true_arr]
                     
                 elif self.chart_type == "d":
-                    if is_x_values == False:
+                    if self.is_x_values == False:
                         if self.check_float_conversion(pred_arr) == False:
                             scores.append(0.0)
                             continue
@@ -94,10 +98,9 @@ class BenetechMetric(Metric):
                 elif isinstance(true_arr[0], str):
                     score = self.normalized_levenshtein_score(true_arr, pred_arr)
                 else:
-                    # Sanity check: This fails in some places
+                    # Sanity check
                     true_arr = self.replace_nan(true_arr)
                     pred_arr = self.replace_nan(pred_arr)
-
                     try:
                         score = self.normalized_rmse(true_arr, pred_arr)
                     except:
@@ -132,13 +135,8 @@ class BenetechMetric(Metric):
             return self.normalized_rmse(y_true, y_pred)
     
     def process_prediction(self, string):
-        # Split text
-        tmp = [x.strip().split(" ") for x in re.sub(r"<0x0A>$", "", string.strip()).split("<0x0A>")]
-        
-        # When there is only 1 val is used twice. ex "<0x0A> 1 | <0x0a>"
-        xs = [x[0] for x in tmp]
-        ys = [x[-1] for x in tmp]
-        return [xs, ys]
+        arr = [x.strip() for x in re.sub(r"<0x0A>$", "", string.strip()).split("<0x0A>")]
+        return [arr]
         
     def check_float_conversion(self, arr):
         try:
@@ -147,6 +145,22 @@ class BenetechMetric(Metric):
         except ValueError:
             return False
         return True
+            
+    def convert_arr(self, arr):
+        """
+        Helper to get the type of series.
+
+        strings: 2
+        floats: 1
+        ints: 0s
+        """
+        if self.check_float_conversion(arr):
+            arr = [float(x) for x in arr]
+            return self.replace_nan(arr)
+        elif self.check_float_conversion(arr[1:]):
+            arr = [float(arr[1])] + [float(x) for x in arr[1:]]
+            return self.replace_nan(arr)
+        return arr
 
     def replace_nan(self, arr):
         res = []

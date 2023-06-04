@@ -19,6 +19,7 @@ def train(
         train_all = config.train_all,
         transform_type = config.transform_type,
         resize_shape = config.resize_shape,
+        val_repeat_n = config.val_repeat_n,
     )
 
     logger, callbacks = load_logger_and_callbacks(
@@ -26,7 +27,7 @@ def train(
         metrics = {
             "val_loss": "min", 
             "train_loss": "min",
-            "val_acc": "max",
+            "val_acc": "last",
             "train_acc": "max",
             },
         overfit_batches = config.overfit_batches,

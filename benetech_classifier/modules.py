@@ -14,8 +14,9 @@ import pandas as pd
 from PIL import Image
 
 class BenetechClassifierDataset(torch.utils.data.Dataset):
-    def __init__(self, data_dir, train=True, transform=None, train_all=False):
+    def __init__(self, data_dir, val_repeat_n, train=True, transform=None, train_all=False):
         self.data_dir = data_dir
+        self.val_repeat_n = val_repeat_n
         self.imgs, self.labels = self.load_df(train, train_all)
         self.transform = transform
 
@@ -30,18 +31,11 @@ class BenetechClassifierDataset(torch.utils.data.Dataset):
             else:
                 df = df[df.validation == True].reset_index(drop=True)
         # Train on all data option
+
         else:
             if train == True:
-                df = df.reset_index(drop=True)
-                # Repeat validation indices 5 times (as these are extracted - not generated)
-                df = pd.concat([
-                    df,
-                    df[df.validation == True],
-                    df[df.validation == True],
-                    df[df.validation == True],
-                    df[df.validation == True],
-                ], ignore_index=True)
-
+                # Repeat validation indices N times (as these are extracted - not generated)
+                df = pd.concat([df] + [df[df.validation == True] for _ in range(self.val_repeat_n)], ignore_index=True)
             else:
                 return [], []
 
@@ -79,6 +73,7 @@ class BenetechClassifierDataModule(pl.LightningDataModule):
         train_all: bool,
         transform_type: str,
         resize_shape: int,
+        val_repeat_n: int,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -119,7 +114,13 @@ class BenetechClassifierDataModule(pl.LightningDataModule):
             self.val_dataset = self._dataset(train=False, transform=self.val_transform)
             
     def _dataset(self, train, transform):
-        return BenetechClassifierDataset(data_dir=self.hparams.data_dir, train=train, transform=transform, train_all=self.hparams.train_all)
+        return BenetechClassifierDataset(
+            data_dir=self.hparams.data_dir, 
+            val_repeat_n=self.hparams.val_repeat_n,
+            train=train, 
+            transform=transform, 
+            train_all=self.hparams.train_all,
+            )
     
     def train_dataloader(self):
         return self._dataloader(self.train_dataset, train=True)

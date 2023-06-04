@@ -5,13 +5,14 @@ from types import SimpleNamespace
 # defaults
 config = SimpleNamespace(
     # data_dir = "/data/bartley/gpu_test/bartley-benetech-resized/",    
-    data_dir = "/data/bartley/gpu_test/500k_graphs/",   
+    data_dir = "/data/bartley/gpu_test/500k_graphs_v2/",   
     # data_dir = "/data/bartley/gpu_test/bartley-benetech-resized-small/",
     model_save_dir = "/data/bartley/gpu_test/models/encoders/",
     cache_dir = "/data/bartley/gpu_test/HF_CACHE",
     model_path = "google/deplot",
     processor_path = "google/deplot",
     chart_type = "v", # one of "vhlsd" (vertical_bar, horizontal_bar, line, scatter, dot)
+    axis = "x", # one of "xy"
     no_wandb = False,
     project = "Benetech-Decoder",
     save_model = True,
@@ -25,6 +26,7 @@ config = SimpleNamespace(
     num_workers = 2,
     seed = 0,
     scheduler = "CosineAnnealingLR",
+    val_repeat_n = 10,
     # -- Trainer Config --
     accelerator = "gpu",
     fast_dev_run = False,
@@ -38,6 +40,8 @@ config = SimpleNamespace(
 
 def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--val_repeat_n", type=int, default=config.val_repeat_n, help="Number of times to repeat the valiation images (on train all).")
+    parser.add_argument("--axis", type=str, default=config.axis, help="The axis of the chart to train on.")
     parser.add_argument("--chart_type", type=str, default=config.chart_type, help="The chart type to train on.")
     parser.add_argument("--data_dir", type=str, default=config.data_dir, help="Data directory path.")
     parser.add_argument("--model_path", type=str, default=config.model_path, help="Huggingface model path.")

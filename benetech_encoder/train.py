@@ -12,6 +12,7 @@ def train(
 
     data_module = BenetechDataModule(
         data_dir = config.data_dir,
+        val_repeat_n = config.val_repeat_n,
         batch_size = config.batch_size,
         processor_path = config.processor_path,
         max_length = config.max_length,
@@ -20,6 +21,7 @@ def train(
         cache_dir = config.cache_dir,
         train_all = config.train_all,
         chart_type = config.chart_type,
+        axis = config.axis,
     )
 
     logger, callbacks = load_logger_and_callbacks(
@@ -42,6 +44,7 @@ def train(
         cache_dir = config.cache_dir,
         scheduler = config.scheduler,
         chart_type = config.chart_type,
+        axis = config.axis,
     )
 
     # Trainer Args: https://lightning.ai/docs/pytorch/stable/common/trainer.html#benchmark

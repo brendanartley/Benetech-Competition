@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 # defaults
 config = SimpleNamespace(
-    data_dir = "/data/bartley/gpu_test/500k_graphs/",    
+    data_dir = "/data/bartley/gpu_test/500k_graphs_v2/",    
     model_save_dir = "/data/bartley/gpu_test/models/classifiers/",
     cache_dir = "/data/bartley/gpu_test/HF_CACHE",
     model_path = "B1", # EfficientNet - B1-B4 are implemented
@@ -17,10 +17,11 @@ config = SimpleNamespace(
     lr = 1e-3,
     lr_min = 1e-8,
     num_cycles = 5,
-    label_smoothing = 0.10,
+    label_smoothing = 0.15,
     scheduler = "CosineAnnealingLRDecay",
     transform_type = "center", # center or top_right
-    resize_shape = 380,
+    resize_shape = 280,
+    val_repeat_n = 10,
     # -- Trainer Config --
     accelerator = "gpu",
     fast_dev_run = False,
@@ -37,6 +38,7 @@ config = SimpleNamespace(
 
 def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--val_repeat_n", type=int, default=config.val_repeat_n, help="Number of times to repeat the valiation images (on train all).")
     parser.add_argument("--resize_shape", type=int, default=config.resize_shape, help="Shape to resize images before crop.")
     parser.add_argument("--transform_type", type=str, default=config.transform_type, help="Transformation type to try.")
     parser.add_argument("--scheduler", type=str, default=config.scheduler, help="Learning rate scheduler for the model to use.")
