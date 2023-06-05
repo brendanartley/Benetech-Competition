@@ -34,15 +34,17 @@ cd /home/bartley/gpu_test/Benetech
 ```
 # -------- Decoder Stuff ---------
 # Training scripts
-CUDA_VISIBLE_DEVICES=0 python main.py --epochs=1 --val_check_interval=0.05 --axis="x" --chart_type="v" && CUDA_VISIBLE_DEVICES=0 python main.py --epochs=1 --val_check_interval=0.05 --axis="y" --chart_type="l"
+CUDA_VISIBLE_DEVICES=0 python main.py --epochs=1 --val_check_interval=0.05 --axis="x" --chart_type="v" --train_all && CUDA_VISIBLE_DEVICES=0 python main.py --epochs=1 --val_check_interval=0.05 --axis="y" --chart_type="l" --train_all
 
-CUDA_VISIBLE_DEVICES=1 python main.py --epochs=1 --val_check_interval=0.05 --axis="x" --chart_type="h" && CUDA_VISIBLE_DEVICES=1 python main.py --epochs=1 --val_check_interval=0.05 --axis="y" --chart_type="s"
+CUDA_VISIBLE_DEVICES=1 python main.py --epochs=1 --val_check_interval=0.05 --axis="x" --chart_type="h" --train_all && CUDA_VISIBLE_DEVICES=1 python main.py --epochs=1 --val_check_interval=0.05 --axis="y" --chart_type="s" --train_all
 
-CUDA_VISIBLE_DEVICES=2 python main.py --epochs=1 --val_check_interval=0.05 --axis="x" --chart_type="l" && CUDA_VISIBLE_DEVICES=2 python main.py --epochs=1 --val_check_interval=0.05 --axis="y" --chart_type="v"
+CUDA_VISIBLE_DEVICES=2 python main.py --epochs=1 --val_check_interval=0.05 --axis="x" --chart_type="l" --train_all && CUDA_VISIBLE_DEVICES=2 python main.py --epochs=1 --val_check_interval=0.05 --axis="y" --chart_type="v" --train_all
 
-CUDA_VISIBLE_DEVICES=3 python main.py --epochs=1 --val_check_interval=0.05 --axis="x" --chart_type="s" && CUDA_VISIBLE_DEVICES=3 python main.py --epochs=1 --val_check_interval=0.05 --axis="y" --chart_type="h"
+CUDA_VISIBLE_DEVICES=3 python main.py --epochs=1 --val_check_interval=0.05 --axis="x" --chart_type="s" --train_all && CUDA_VISIBLE_DEVICES=3 python main.py --epochs=1 --val_check_interval=0.05 --axis="y" --chart_type="h" --train_all
 
-CUDA_VISIBLE_DEVICES=0 python main.py --epochs=1 --val_check_interval=0.05 --axis="x" --chart_type="v"
+CUDA_VISIBLE_DEVICES=3 python main.py --epochs=1 --axis="x" --chart_type="d" --train_all && CUDA_VISIBLE_DEVICES=3 python main.py --epochs=1 --axis="y" --chart_type="d" --train_all
+
+CUDA_VISIBLE_DEVICES=0 python main.py --epochs=1 --val_check_interval=0.05 --axis="x" --chart_type="v" --fast_dev_run
 CUDA_VISIBLE_DEVICES=1 python main.py --epochs=1 --val_check_interval=0.05 --axis="y" --chart_type="v"
 CUDA_VISIBLE_DEVICES=2 python main.py --epochs=1 --val_check_interval=0.05 --axis="x" --chart_type="l"
 CUDA_VISIBLE_DEVICES=3 python main.py --epochs=1 --val_check_interval=0.05 --axis="y" --chart_type="l"
@@ -60,8 +62,8 @@ CUDA_VISIBLE_DEVICES=1 python classifier_train.py --fast_dev_run
 CUDA_VISIBLE_DEVICES=2 python classifier_train.py --lr=1e-4 --lr_min=1e-8 --num_cycles=4 --fast_dev_run
 
 # ---------- Sweeps ----------
-CUDA_VISIBLE_DEVICES=0 wandb agent brendanartley/Benetech-Classifier/lz7q7n2a
-CUDA_VISIBLE_DEVICES=1 wandb agent brendanartley/Benetech-Classifier/lz7q7n2a
-CUDA_VISIBLE_DEVICES=2 wandb agent brendanartley/Benetech-Classifier/lz7q7n2a
-CUDA_VISIBLE_DEVICES=3 wandb agent brendanartley/Benetech-Classifier/lz7q7n2a
+CUDA_VISIBLE_DEVICES=0 wandb agent brendanartley/Benetech-Classifier/5i8uzcfa
+CUDA_VISIBLE_DEVICES=1 wandb agent brendanartley/Benetech-Classifier/5i8uzcfa
+CUDA_VISIBLE_DEVICES=2 wandb agent brendanartley/Benetech-Classifier/5i8uzcfa
+CUDA_VISIBLE_DEVICES=3 wandb agent brendanartley/Benetech-Classifier/5i8uzcfa
 ```

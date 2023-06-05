@@ -175,6 +175,7 @@ class BenetechModule(pl.LightningModule):
         lr_min: float,
         chart_type: str,
         axis: str,
+        fast_dev_run: bool,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -282,6 +283,6 @@ class BenetechModule(pl.LightningModule):
         self.log(f"{stage}_loss", loss, prog_bar=True, batch_size=batch_size)
 
     def on_train_end(self):
-        if self.hparams.save_model == True:
+        if self.hparams.fast_dev_run == False and self.hparams.save_model == True:
             self.model.save_pretrained('{}{}_{}_{}.pt'.format(self.hparams.model_save_dir, self.hparams.run_name, self.hparams.chart_type, self.hparams.axis))
         return

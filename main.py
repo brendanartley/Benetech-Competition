@@ -4,7 +4,6 @@ from types import SimpleNamespace
 
 # defaults
 config = SimpleNamespace(
-    # data_dir = "/data/bartley/gpu_test/bartley-benetech-resized/",    
     data_dir = "/data/bartley/gpu_test/500k_graphs_v2/",   
     # data_dir = "/data/bartley/gpu_test/bartley-benetech-resized-small/",
     model_save_dir = "/data/bartley/gpu_test/models/encoders/",
@@ -35,7 +34,7 @@ config = SimpleNamespace(
     precision = 32,
     log_every_n_steps = 100,
     accumulate_grad_batches = 1,
-    val_check_interval = 0.10,
+    val_check_interval = None,
 )
 
 def parse_args():

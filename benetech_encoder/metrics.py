@@ -135,7 +135,8 @@ class BenetechMetric(Metric):
             return self.normalized_rmse(y_true, y_pred)
     
     def process_prediction(self, string):
-        arr = [x.strip() for x in re.sub(r"<0x0A>$", "", string.strip()).split("<0x0A>")]
+        string = re.sub(r"^<0x0A>|<0x0A>$", "", string.strip())
+        arr = [x.strip() for x in string.split("<0x0A>")]
         return [arr]
         
     def check_float_conversion(self, arr):

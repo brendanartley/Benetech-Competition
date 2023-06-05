@@ -45,6 +45,7 @@ def train(
         scheduler = config.scheduler,
         chart_type = config.chart_type,
         axis = config.axis,
+        fast_dev_run = config.fast_dev_run,
     )
 
     # Trainer Args: https://lightning.ai/docs/pytorch/stable/common/trainer.html#benchmark

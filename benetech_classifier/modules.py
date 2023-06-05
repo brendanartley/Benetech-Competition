@@ -279,6 +279,6 @@ class BenetechClassifierModule(pl.LightningModule):
         self.log_dict(self.metrics[f"{stage}_metrics"], prog_bar=True, batch_size=batch_size)
 
     def on_train_end(self):
-        if self.hparams.save_model == True:
+        if self.hparams.fast_dev_run == False and self.hparams.save_model == True:
             torch.save(self.model.state_dict(), "{}{}_c.pt".format(self.hparams.model_save_dir, self.hparams.run_name))
         return

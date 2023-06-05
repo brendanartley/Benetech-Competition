@@ -14,13 +14,13 @@ config = SimpleNamespace(
     num_classes = 5,
     batch_size = 16,
     epochs = 1,
-    lr = 1e-3,
+    lr = 7e-4,
     lr_min = 1e-8,
     num_cycles = 5,
-    label_smoothing = 0.15,
+    label_smoothing = 0.20,
     scheduler = "CosineAnnealingLRDecay",
     transform_type = "center", # center or top_right
-    resize_shape = 280,
+    resize_shape = 340,
     val_repeat_n = 10,
     # -- Trainer Config --
     accelerator = "gpu",

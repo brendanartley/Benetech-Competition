@@ -9,14 +9,14 @@ project: Benetech-Classifier
 
 # Metric to optimize
 metric:
-  name: val_acc.max
+  name: val_acc.last
   goal: maximize
 
 # Parameters space to search
 parameters:
   resize_shape:
-    values: [200, 220, 240, 260, 280, 300, 320, 340, 360]
-  transform_type:
-    values: ["center", "top_right"]
-  model_path:
-    values: ["B1", "B2"]
+    values: [300, 340, 380]
+  label_smoothing:
+    values: [0.15, 0.17, 0.19, 0.21]
+  lr:
+    values: [1e-3, 8e-4, 6e-4]
