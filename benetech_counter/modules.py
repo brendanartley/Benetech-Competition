@@ -4,7 +4,7 @@ import pandas as pd
 from PIL import Image
 
 from transformers import AutoProcessor, Pix2StructForConditionalGeneration
-from benetech_encoder.metrics import BenetechMetric
+from benetech_counter.metrics import CounterAccuracy
 
 class ImageCaptioningDataset(torch.utils.data.Dataset):
     def __init__(self, data_dir, val_repeat_n, processor, max_patches, validation_set, train_all, chart_type, axis):
@@ -51,7 +51,7 @@ class ImageCaptioningDataset(torch.utils.data.Dataset):
             idx = 1
         else:
             raise ValueError(f"{axis} is not a recognized axis")
-        labels = df["text"].apply(lambda value: " <0x0A> ".join([y[idx].strip() for y in [x.split("|") for x in value.split("<0x0A>")]]))
+        labels = df["count"].apply(lambda x: ("<0x0A> "*x).strip())
 
         return imgs, labels
     
@@ -189,6 +189,7 @@ class BenetechModule(pl.LightningModule):
                 is_vqa=False,
                 cache_dir=self.hparams.cache_dir,
                 )
+            model.resize_token_embeddings(1000) # Dont need 50k tokens for counting (reduction of ~75 million params)
             return model
         else:
             raise ValueError(f"{self.hparams.model_path} is not a valid model")
@@ -211,7 +212,7 @@ class BenetechModule(pl.LightningModule):
     
     def _init_metrics(self):
         metrics = {
-            "benetech": BenetechMetric(chart_type = self.hparams.chart_type, axis = self.hparams.axis),
+            "countAcc": CounterAccuracy(),
         }
         return metrics
 
@@ -254,6 +255,7 @@ class BenetechModule(pl.LightningModule):
             predictions = self.model.generate(
                 flattened_patches=flattened_patches, 
                 attention_mask=attention_mask, 
+                min_new_tokens=2, # Assuming all data is >= length(2)
                 max_new_tokens=self.hparams.max_length,
                 early_stopping=True,
                 use_cache=True,
@@ -272,8 +274,9 @@ class BenetechModule(pl.LightningModule):
                     print("Pred: ", pred)
 
             # Compute benetech score
-            self.metrics["benetech"](ground_truths, predictions)
-            self.log("benetech_score", self.metrics["benetech"].compute(), on_epoch=True, batch_size=len(labels))
+            self.metrics["countAcc"](ground_truths, predictions)
+            # self.log("countAcc", self.metrics["countAcc"].compute(), on_epoch=True, batch_size=len(labels))
+            self.log("countAcc", self.metrics["countAcc"].compute(), on_epoch=True, prog_bar=True, batch_size=len(labels))
         else:
             return loss
     
@@ -282,5 +285,5 @@ class BenetechModule(pl.LightningModule):
 
     def on_train_end(self):
         if self.hparams.fast_dev_run == False and self.hparams.save_model == True:
-            self.model.save_pretrained('{}{}_{}_{}.pt'.format(self.hparams.model_save_dir, self.hparams.run_name, self.hparams.chart_type, self.hparams.axis))
+            self.model.save_pretrained('{}{}_{}.pt'.format(self.hparams.model_save_dir, self.hparams.run_name, "counter"))
         return

@@ -25,7 +25,7 @@ config = SimpleNamespace(
     num_workers = 2,
     seed = 0,
     scheduler = "CosineAnnealingLR",
-    val_repeat_n = 10,
+    val_repeat_n = 25,
     # -- Trainer Config --
     accelerator = "gpu",
     fast_dev_run = False,
@@ -34,7 +34,7 @@ config = SimpleNamespace(
     precision = 32,
     log_every_n_steps = 100,
     accumulate_grad_batches = 1,
-    val_check_interval = None,
+    val_check_interval = 0.05,
 )
 
 def parse_args():
