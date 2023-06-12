@@ -37,6 +37,7 @@ class ImageCaptioningDataset(torch.utils.data.Dataset):
         else:
             if validation_set == False:
                 # Repeat validation indices N times (as these are extracted - not generated)
+                df = df.sample(frac=1, random_state=0)
                 df = pd.concat([df] + [df[df.validation == True] for _ in range(self.val_repeat_n)], ignore_index=True)
             else:
                 return [], []
@@ -112,7 +113,10 @@ class BenetechDataModule(pl.LightningDataModule):
         )
 
     def train_dataloader(self):
-        return self._dataloader(self.train_dataset, train=True)
+        # return self._dataloader(self.train_dataset, train=True)
+        # Note: passing train=False to overrride shuffle param
+        # This makes us fine tune at the end..
+        return self._dataloader(self.train_dataset, train=False)
     
     def val_dataloader(self):
         return self._dataloader(self.val_dataset, train=False)
