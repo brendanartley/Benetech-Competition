@@ -35,7 +35,12 @@ class BenetechClassifierDataset(torch.utils.data.Dataset):
         else:
             if train == True:
                 # Repeat validation indices N times (as these are extracted - not generated)
-                df = pd.concat([df] + [df[df.validation == True] for _ in range(self.val_repeat_n)], ignore_index=True)
+                df = pd.concat(
+                    [df] + \
+                    [df[(df.validation == True) & (df.chart_type == "vertical_bar")] for _ in range(self.val_repeat_n//2)] + \
+                    [df[(df.validation == True) & (df.chart_type == "line")] for _ in range(self.val_repeat_n//2)] + \
+                    [df[(df.validation == True) & (df.chart_type == "scatter")] for _ in range(self.val_repeat_n)] + \
+                    [df[(df.validation == True) & (df.chart_type == "horizontal_bar")] for _ in range(self.val_repeat_n)], ignore_index=True)
             else:
                 return [], []
 
@@ -134,7 +139,7 @@ class BenetechClassifierDataModule(pl.LightningDataModule):
     def _dataloader(self, dataset, train=False):
         return torch.utils.data.DataLoader(
             dataset,
-            shuffle = train,
+            shuffle = train, # Fixed shuffle for fine_tuning
             batch_size = self.hparams.batch_size,
             num_workers = self.hparams.num_workers,
             pin_memory = True, # True for when processing is done on CPU

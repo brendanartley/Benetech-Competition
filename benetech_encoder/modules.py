@@ -37,8 +37,14 @@ class ImageCaptioningDataset(torch.utils.data.Dataset):
         else:
             if validation_set == False:
                 # Repeat validation indices N times (as these are extracted - not generated)
-                df = df.sample(frac=1, random_state=0)
-                df = pd.concat([df] + [df[df.validation == True] for _ in range(self.val_repeat_n)], ignore_index=True)
+                if self.chart_type == 'v':
+                    df = pd.concat([df] + [df[(df.validation == True) & (df.chart_type == "vertical_bar")] for _ in range(self.val_repeat_n//2)], ignore_index=True)
+                elif self.chart_type == 'l':
+                    df = pd.concat([df] + [df[(df.validation == True) & (df.chart_type == "line")] for _ in range(self.val_repeat_n//2)], ignore_index=True)           
+                elif self.chart_type == 's':
+                    df = pd.concat([df] + [df[(df.validation == True) & (df.chart_type == "scatter")] for _ in range(self.val_repeat_n)], ignore_index=True)
+                elif self.chart_type == 'h':
+                    df = pd.concat([df] + [df[(df.validation == True) & (df.chart_type == "horizontal_bar")] for _ in range(self.val_repeat_n*2)], ignore_index=True)
             else:
                 return [], []
         
@@ -84,7 +90,7 @@ class BenetechDataModule(pl.LightningDataModule):
     ):
         super().__init__()
         self.save_hyperparameters()
-        self.processor = AutoProcessor.from_pretrained(processor_path, is_vqa=False, cache_dir=cache_dir)
+        self.processor = AutoProcessor.from_pretrained("google/deplot", is_vqa=False, cache_dir=cache_dir)
         self.train_transform, self.val_transform = self._init_transforms()
     
     def _init_transforms(self):
@@ -113,10 +119,7 @@ class BenetechDataModule(pl.LightningDataModule):
         )
 
     def train_dataloader(self):
-        # return self._dataloader(self.train_dataset, train=True)
-        # Note: passing train=False to overrride shuffle param
-        # This makes us fine tune at the end..
-        return self._dataloader(self.train_dataset, train=False)
+        return self._dataloader(self.train_dataset, train=True)
     
     def val_dataloader(self):
         return self._dataloader(self.val_dataset, train=False)

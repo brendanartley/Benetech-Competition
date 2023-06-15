@@ -50,19 +50,18 @@ CUDA_VISIBLE_DEVICES=2 python main.py --epochs=1 --axis="x" --chart_type="l" --t
 CUDA_VISIBLE_DEVICES=3 python main.py --epochs=1 --axis="x" --chart_type="s" --train_all && CUDA_VISIBLE_DEVICES=3 python main.py --epochs=1 --axis="y" --chart_type="h" --train_all
 
 # -- 100 val_repeat_n test (w/ smaller model) --
-CUDA_VISIBLE_DEVICES=0 python main.py --epochs=1 --val_repeat_n=100 --axis="x" --chart_type="v" --train_all && CUDA_VISIBLE_DEVICES=0 python main.py --epochs=1 --val_repeat_n=100 --axis="y" --chart_type="l" --train_all
-CUDA_VISIBLE_DEVICES=1 python main.py --epochs=1 --val_repeat_n=100 --axis="x" --chart_type="h" --train_all && CUDA_VISIBLE_DEVICES=1 python main.py --epochs=1 --val_repeat_n=100 --axis="y" --chart_type="s" --train_all
-CUDA_VISIBLE_DEVICES=2 python main.py --epochs=1 --val_repeat_n=100 --axis="x" --chart_type="l" --train_all && CUDA_VISIBLE_DEVICES=2 python main.py --epochs=1 --val_repeat_n=100 --axis="y" --chart_type="v" --train_all
-CUDA_VISIBLE_DEVICES=3 python main.py --epochs=1 --val_repeat_n=100 --axis="x" --chart_type="s" --train_all && CUDA_VISIBLE_DEVICES=3 python main.py --epochs=1 --val_repeat_n=100 --axis="y" --chart_type="h" --train_all
+CUDA_VISIBLE_DEVICES=0 python main.py --epochs=1 --axis="x" --chart_type="v" --train_all && CUDA_VISIBLE_DEVICES=0 python main.py --epochs=1 --axis="y" --chart_type="l" --train_all
+CUDA_VISIBLE_DEVICES=1 python main.py --epochs=1 --axis="x" --chart_type="h" --train_all && CUDA_VISIBLE_DEVICES=1 python main.py --epochs=1 --axis="y" --chart_type="s" --train_all
+CUDA_VISIBLE_DEVICES=2 python main.py --epochs=1 --axis="x" --chart_type="l" --train_all && CUDA_VISIBLE_DEVICES=2 python main.py --epochs=1 --axis="y" --chart_type="v" --train_all
+CUDA_VISIBLE_DEVICES=3 python main.py --epochs=1 --axis="x" --chart_type="s" --train_all && CUDA_VISIBLE_DEVICES=3 python main.py --epochs=1 --axis="y" --chart_type="h" --train_all
 
 # -- 1536 patches run --
-CUDA_VISIBLE_DEVICES=0 python main.py --epochs=1 --axis="x" --chart_type="v" --max_patches=1536 --lr=7e-6 --batch_size=2 --train_all && CUDA_VISIBLE_DEVICES=0 python main.py --epochs=1 --axis="y" --chart_type="l" --max_patches=1536 --lr=7e-6 --batch_size=2 --train_all
-CUDA_VISIBLE_DEVICES=1 python main.py --epochs=1 --axis="x" --chart_type="h" --max_patches=1536 --lr=7e-6 --batch_size=2 --train_all && CUDA_VISIBLE_DEVICES=1 python main.py --epochs=1 --axis="y" --chart_type="s" --max_patches=1536 --lr=7e-6 --batch_size=2 --train_all
-CUDA_VISIBLE_DEVICES=2 python main.py --epochs=1 --axis="x" --chart_type="l" --max_patches=1536 --lr=7e-6 --batch_size=2 --train_all && CUDA_VISIBLE_DEVICES=2 python main.py --epochs=1 --axis="y" --chart_type="v" --max_patches=1536 --lr=7e-6 --batch_size=2 --train_all
-CUDA_VISIBLE_DEVICES=3 python main.py --epochs=1 --axis="x" --chart_type="s" --max_patches=1536 --lr=7e-6 --batch_size=2 --train_all && CUDA_VISIBLE_DEVICES=3 python main.py --epochs=1 --axis="y" --chart_type="h" --max
+CUDA_VISIBLE_DEVICES=0 python main.py --axis="x" --chart_type="v" --epochs=2 --max_patches=1536 --val_repeat_n=45 --lr=7e-6 --batch_size=2 --train_all && CUDA_VISIBLE_DEVICES=0 python main.py --axis="y" --chart_type="l" --epochs=2 --max_patches=1536 --val_repeat_n=45 --lr=7e-6 --batch_size=2 --train_all
+CUDA_VISIBLE_DEVICES=1 python main.py --axis="x" --chart_type="h" --epochs=2 --max_patches=1536 --val_repeat_n=45 --lr=7e-6 --batch_size=2 --train_all && CUDA_VISIBLE_DEVICES=1 python main.py --axis="y" --chart_type="s" --epochs=2 --max_patches=1536 --val_repeat_n=45 --lr=7e-6 --batch_size=2 --train_all
+CUDA_VISIBLE_DEVICES=2 python main.py --axis="x" --chart_type="l" --epochs=2 --max_patches=1536 --val_repeat_n=45 --lr=7e-6 --batch_size=2 --train_all && CUDA_VISIBLE_DEVICES=2 python main.py --axis="y" --chart_type="v" --epochs=2 --max_patches=1536 --val_repeat_n=45 --lr=7e-6 --batch_size=2 --train_all
+CUDA_VISIBLE_DEVICES=3 python main.py --axis="x" --chart_type="s" --epochs=2 --max_patches=1536 --val_repeat_n=45 --lr=7e-6 --batch_size=2 --train_all && CUDA_VISIBLE_DEVICES=3 python main.py --axis="y" --chart_type="h" --epochs=2 --max_patches=1536 --val_repeat_n=45 --lr=7e-6 --batch_size=2 --train_all
 
-
-CUDA_VISIBLE_DEVICES=0 python main.py --epochs=1 --val_check_interval=0.05 --max_patches=2048 --batch_size=2 --lr=5e-6 --axis="x" --chart_type="v"
+CUDA_VISIBLE_DEVICES=0 python main.py --epochs=1 --val_check_interval=0.05 --max_patches=1024 --batch_size=2 --lr=5e-6 --axis="x" --chart_type="v" --fast_dev_run
 CUDA_VISIBLE_DEVICES=1 python main.py --epochs=1 --val_check_interval=0.05 --max_patches=2048 --batch_size=2 --lr=5e-6 --axis="y" --chart_type="v"
 CUDA_VISIBLE_DEVICES=2 python main.py --epochs=1 --val_check_interval=0.05 --max_patches=2048 --batch_size=2 --lr=5e-6 --axis="x" --chart_type="l"
 CUDA_VISIBLE_DEVICES=3 python main.py --epochs=1 --val_check_interval=0.05 --max_patches=2048 --batch_size=2 --lr=5e-6 --axis="y" --chart_type="l"
