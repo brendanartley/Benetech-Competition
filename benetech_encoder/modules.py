@@ -32,19 +32,30 @@ class ImageCaptioningDataset(torch.utils.data.Dataset):
                 df = df[df.validation == True].reset_index(drop=True)
             else:
                 df = df[df.validation == False].reset_index(drop=True)
-        
+
         # Train on all data option
         else:
             if validation_set == False:
+
                 # Repeat validation indices N times (as these are extracted - not generated)
                 if self.chart_type == 'v':
-                    df = pd.concat([df] + [df[(df.validation == True) & (df.chart_type == "vertical_bar")] for _ in range(self.val_repeat_n//2)], ignore_index=True)
+                    df = pd.concat([df[(df.validation == False)].sample(5000)] + [df[(df.validation == True) & (df.chart_type == "vertical_bar")] for _ in range(self.val_repeat_n//2)], ignore_index=True)
                 elif self.chart_type == 'l':
-                    df = pd.concat([df] + [df[(df.validation == True) & (df.chart_type == "line")] for _ in range(self.val_repeat_n//2)], ignore_index=True)           
+                    df = pd.concat([df[(df.validation == False)].sample(5500)] + [df[(df.validation == True) & (df.chart_type == "line")] for _ in range(self.val_repeat_n//2)], ignore_index=True)           
                 elif self.chart_type == 's':
-                    df = pd.concat([df] + [df[(df.validation == True) & (df.chart_type == "scatter")] for _ in range(self.val_repeat_n)], ignore_index=True)
+                    df = pd.concat([df[(df.validation == False)].sample(5000)] + [df[(df.validation == True) & (df.chart_type == "scatter")] for _ in range(self.val_repeat_n)], ignore_index=True)
                 elif self.chart_type == 'h':
-                    df = pd.concat([df] + [df[(df.validation == True) & (df.chart_type == "horizontal_bar")] for _ in range(self.val_repeat_n*2)], ignore_index=True)
+                    df = pd.concat([df[(df.validation == False)].sample(5000)] + [df[(df.validation == True) & (df.chart_type == "horizontal_bar")] for _ in range(self.val_repeat_n*2)], ignore_index=True)
+
+                # # Repeat validation indices N times (as these are extracted - not generated)
+                # if self.chart_type == 'v':
+                #     df = pd.concat([df] + [df[(df.validation == True) & (df.chart_type == "vertical_bar")] for _ in range(self.val_repeat_n//2)], ignore_index=True)
+                # elif self.chart_type == 'l':
+                #     df = pd.concat([df] + [df[(df.validation == True) & (df.chart_type == "line")] for _ in range(self.val_repeat_n//2)], ignore_index=True)           
+                # elif self.chart_type == 's':
+                #     df = pd.concat([df] + [df[(df.validation == True) & (df.chart_type == "scatter")] for _ in range(self.val_repeat_n)], ignore_index=True)
+                # elif self.chart_type == 'h':
+                #     df = pd.concat([df] + [df[(df.validation == True) & (df.chart_type == "horizontal_bar")] for _ in range(self.val_repeat_n*2)], ignore_index=True)
             else:
                 return [], []
         
@@ -190,15 +201,21 @@ class BenetechModule(pl.LightningModule):
         self.metrics = self._init_metrics()
 
     def _init_model(self):
-        if self.hparams.model_path in ["google/deplot", "google/matcha-base", "google/pix2struct-base"]:
-            model = Pix2StructForConditionalGeneration.from_pretrained(
-                self.hparams.model_path, 
-                is_vqa=False,
-                cache_dir=self.hparams.cache_dir,
-                )
-            return model
-        else:
-            raise ValueError(f"{self.hparams.model_path} is not a valid model")
+        # if self.hparams.model_path in ["google/deplot", "google/matcha-base", "google/pix2struct-base"]:
+        #     model = Pix2StructForConditionalGeneration.from_pretrained(
+        #         self.hparams.model_path, 
+        #         is_vqa=False,
+        #         cache_dir=self.hparams.cache_dir,
+        #     )
+        #     return model
+        # else:
+        #     raise ValueError(f"{self.hparams.model_path} is not a valid model")
+        model = Pix2StructForConditionalGeneration.from_pretrained(
+            self.hparams.model_path, 
+            is_vqa=False,
+            cache_dir=self.hparams.cache_dir,
+        )
+        return model
     
     def _init_optimizer(self):
         return torch.optim.AdamW(

@@ -2,7 +2,7 @@ from benetech_classifier.train import train
 import argparse
 from types import SimpleNamespace
 
-# defaults
+# default configuration parameters
 config = SimpleNamespace(
     data_dir = "/data/bartley/gpu_test/500k_graphs_v2/",    
     model_save_dir = "/data/bartley/gpu_test/models/classifiers/",

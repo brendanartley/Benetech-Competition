@@ -13,6 +13,11 @@ import argparse
 
 VISUALIZE_FIRST_N = 0
 
+"""
+Plot generator used to produce additional graphs for training.
+Source: GenPlot Paper. Arxiv: TODO
+"""
+
 def get_random_sentence(
     max_words: int = 6,
     min_words: int = 3,
@@ -55,8 +60,6 @@ def sample_polynomial(polynomial_coeffs, x_min, x_max, num_samples):
 
     Returns:
         ndarray: A 2D array of shape (num_samples, 2) containing (x, y) pairs.
-        
-    Source: ChatGPT
     """
     # Create an array of x values to sample
     x = np.random.uniform(x_min, x_max, num_samples)

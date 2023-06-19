@@ -3,21 +3,19 @@ import requests
 import torch
 from PIL import Image
 
+"""
+Sample script to use deplot for inference.
+"""
+
 class CFG:
     img_path = "https://www.tutorialspoint.com/matplotlib/images/matplotlib_bar_plot.jpg"
     img_path = "https://www.w3schools.com/python/img_matplotlib_bars1.png"
-    
-    # img_path = "/data/bartley/gpu_test/bartley-benetech-resized/validation/000b92c3b098.jpg"
-
-    # model_path = "google/pix2struct-base"
-    # model_path = "google/matcha-base"
     model_path = "google/deplot"
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     MAX_TOKENS = 512
     MAX_PATCHES = 1024
     MAX_LENGTH = 512
-
 
 def process_prediction(processor, model, fp16=False):
     image = Image.open(requests.get(CFG.img_path, stream=True).raw)
@@ -76,7 +74,6 @@ def predict_img(fp16=False):
 
 def main():
     predict_img(fp16=False)
-    # predict_img(fp16=True)
 
 if __name__ == "__main__":
     main()
