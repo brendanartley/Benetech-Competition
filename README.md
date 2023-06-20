@@ -1,8 +1,12 @@
-## Benetech - Making Graphs Accessible Competiton
+# Benetech - Making Graphs Accessible Competiton
 
 This repository contains code for the 38th place solution in the [Benetech - Making Graphs Accessible competition](https://www.kaggle.com/competitions/benetech-making-graphs-accessible) on Kaggle.
 
-### Improvements
+<h1 align="center">
+<img src="./imgs/benetech_models.png" alt="Model Architecture" width="800">
+</h1>
+
+## Improvements
 
 Do not overfit the training data and public LB.
 - I used too many synthetically generated plots, and overfit the extracted data
@@ -28,7 +32,7 @@ Need to focus more on the ensemble
 - Look at the correlation between different high-performing models (and pick ones that are quite different)
 - See [1st Place Solution of the Mechanisms of Action Competition](https://www.kaggle.com/competitions/lish-moa/discussion/201510)
 
-### Positives
+## Positives
 
 Best place in a Kaggle competition this far!
 - Reduced precision of the data 
