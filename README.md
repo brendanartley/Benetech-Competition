@@ -19,16 +19,15 @@ Could have used a more creative synthetic data generation process
 - See [Raja Biswas's 2nd Place Solution](https://www.kaggle.com/competitions/benetech-making-graphs-accessible/discussion/418430)
 
 Needed a better CV setup
-- I was unable to have a robust CV validation setup as the models I was using took ~3 days to train
-- Use smaller models to test ideas and scaled up in the end
-- Set up validation evaluator in torch lightning at the start
+- Use smaller models to test ideas and scale up in the end
+- Set up a way to validate single models and ensembles early on (ie. add a valdiate.py file)
 
 Classifier and Counting performance was not strong
 - For a chart to be scored it had to be classified correctly, and have the right number of points
 - Classification CV was ~95%, but other solutions were ~99.5% (they used more "real" plots)
 
 Need to focus more on the ensemble
-- I did not have an ensemble for this competition
+- Work on ensembles in local CV to find good combinations
 - Look at the correlation between different high-performing models (and pick ones that are quite different)
 - See [1st Place Solution of the Mechanisms of Action Competition](https://www.kaggle.com/competitions/lish-moa/discussion/201510)
 
