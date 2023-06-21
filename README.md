@@ -8,6 +8,10 @@ This repository contains code for the 38th place solution in the [Benetech - Mak
 
 ## Improvements
 
+User better EffnetV2s (or more recent models)
+- V2s are faster to train and more accurate
+- See [Thanh's 1st Place Solution](https://www.kaggle.com/competitions/benetech-making-graphs-accessible/discussion/418510)
+
 Do not overfit the training data and public LB.
 - I used too many synthetically generated plots, and overfit the extracted data
 
