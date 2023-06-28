@@ -8,7 +8,7 @@ This repository contains code for the 38th place solution in the [Benetech - Mak
 
 ## Improvements
 
-User better EffnetV2s (or more recent models)
+Use SOTA models (effnet -> effnetv2)
 - V2s are faster to train and more accurate
 - See [Thanh's 1st Place Solution](https://www.kaggle.com/competitions/benetech-making-graphs-accessible/discussion/418510)
 
